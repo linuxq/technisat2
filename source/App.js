@@ -64,7 +64,7 @@ enyo.kind({
 		{kind: "WebService", name:"wstimers", url: "", onResponse:"processTimers", callbackName: "callback"},
 		{kind: "WebService", name:"wsdeltimer", url: "", onResponse:"processDelTimer", callbackName: "callback"},
 		{kind: "WebService", name:"wsdeltimerconfirm", url: "", onResponse:"", callbackName: "callback"},
-		{kind: "WebService", name:"wssettimer", url: "", onResponse:"processSTResponse", callbackName: "callback"},
+		{kind: "WebService", name:"wssettimer", url: "", onResponse:"processSTResponse2", callbackName: "callback"},
 	],
 	setupItem: function(inSender, inEvent) {
 		this.$[inSender.item].setContent("This is row number: " + inEvent.index);
@@ -134,6 +134,11 @@ enyo.kind({
 		console.log("2");
 		console.log(inEvent);
 		this.$.lbltext.setContent(inEvent);
+	},
+	processSetTimerError: function(inSender, inEvent)  {
+		//console.log("");
+		console.log("Error: " + inEvent);
+		this.$.lbltext.setContent(inEvent);
 	},	
 	delTimerCancel: function() {
 		this.$.DelTimerConfirmPopup.hide();
@@ -191,6 +196,7 @@ enyo.kind({
 			    method: "POST"
 		});
 		request.response(this, "processSetTimer");
+		request.error(this, "processSetTimerError");
 		request.go(params);
 	},
 	
