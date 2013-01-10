@@ -1,0 +1,10 @@
+{
+	"id": "com.meissel.technisat",
+	"version": "0.0.1",
+	"vendor": "Marcel Meissel",
+	"type": "web",
+	"main": "index.html",
+	"title": "Technisat",
+	"icon": "icon.png",
+	"uiRevision":2
+}
