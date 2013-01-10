@@ -15,7 +15,7 @@ enyo.kind({
 				{classes: "onyx-sample-divider", content: "Receiver"},
 				{classes: "onyx-toolbar-inline", components: [
 					{kind: "onyx.InputDecorator", components: [
-						{kind: "onyx.Input", placeholder: "IP address", name: "serverAddress", value: "http://marcel.homelinux.org:90", onchange: "TSAddressChanged"}
+						{kind: "onyx.Input", placeholder: "IP address", name: "serverAddress", value: "http://192.168.2.48", onchange: "TSAddressChanged"}
 					]},
 					{kind: "onyx.InputDecorator", components: [
 						{kind: "onyx.Input", type:"password", name: "serverPW", placeholder: "Enter password", onchange: "TSPWChanged"}
