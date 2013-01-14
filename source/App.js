@@ -81,7 +81,7 @@ enyo.kind({
 		{kind: "WebService", name:"wstimers", url: "", onResponse:"processTimers", callbackName: "callback"},
 		{kind: "WebService", name:"wsdeltimer", url: "", onResponse:"processDelTimer", callbackName: "callback"},
 		{kind: "WebService", name:"wsdeltimerconfirm", url: "", onResponse:"", callbackName: "callback"},
-		{kind: "WebService", name:"wssettimer", url: "", onResponse:"processSTResponse", callbackName: "callback"},
+		{kind: "WebService", name:"wssettimer", url: "", onResponse:"processSTResponse2", callbackName: "callback"},
 	],
 	rendered: function(inSender, inEvent) {
 		this.inherited(arguments);

@@ -3,9 +3,9 @@ enyo.depends(
 	"json.js",
 	"cookie.js",
 	"xhr.js",
+	"formdata.js",
 	"AjaxProperties.js",
 	"Ajax.js",
 	"Jsonp.js",
-	"WebService.js",
-        "formdata.js"
+	"WebService.js"
 );

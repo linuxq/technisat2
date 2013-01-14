@@ -88,7 +88,7 @@ enyo.kind({
 		var body;
 		if (this.method != "GET") {
 			body = this.postBody;
-			if (this.method === "POST" && body instanceof FormData) {
+			if (this.method === "POST" && body instanceof enyo.FormData) {
 				if (body.fake) {
 					xhr_headers["Content-Type"] = body.getContentType();
 					body = body.toString();
