@@ -1,15 +1,16 @@
-TSAddress = "http://marcel.homelinux.org:90";
-TSPWMD5 = "350a7f5ee27d22dbe36698b10930ff96";
+TSAddress = ""; //"http://192.168.2.48";
+TSPWMD5 = "";
 TimerID = 0;
 Timers = new Array();
 enyo.kind({
 	name: "App",
 	kind: "FittableRows",
 	classes: "onyx enyo-fit",
+	style: "background-color: grey",
 	components: [
 		{kind: "onyx.Toolbar", components: [
 			{content: "Technisat Frontend"},
-			{kind: "onyx.MenuDecorator", onSelect: "itemSelected", components: [
+			{kind: "onyx.MenuDecorator", onSelect: "MenuItemSelected", components: [
 				{content: "Settings"},
 				{kind: "onyx.Menu", floating: true, components: [
 					{content: "Receiver setup"},
@@ -34,17 +35,6 @@ enyo.kind({
 				{kind:"onyx.Button", content: "Set Timer", ontap:"buttonSetTimer"},
 			]}					
 		]},*/
-		{kind: "GTS.DividerDrawer", showing: false, caption: "Receiver", open: false, components: [
-			{classes: "onyx-toolbar-inline", components: [
-				{kind: "onyx.InputDecorator", components: [
-					{kind: "onyx.Input", placeholder: "IP address", name: "serverAddress", value: "http://192.168.2.48", onchange: "TSAddressChanged"}
-				]},
-				{kind: "onyx.InputDecorator", components: [
-					{kind: "onyx.Input", type:"password", name: "serverPW", placeholder: "Enter password", onchange: "TSPWChanged"}
-				]}
-			]},
-			{kind:"onyx.Button", content: "Login", ontap:"buttonLogin"}					
-		]},
 		{kind: "Scroller", touch: true, fit: true, realtimeFit: true, components: [
 			{kind: "Repeater", onSetupItem:"setupItem", realtimeFit: true, classes: "list-sample-pulldown-list enyo-fit", onclick: "clickPodcast", onhold: "TimerHeld", components: [
 				{name: "item", classes:"list-sample-pulldown-item", style: "border: 1px solid silver; padding: 5px; font-size: 12px; font-weight: bold;", components: [
@@ -62,7 +52,7 @@ enyo.kind({
 			]},
 		]},				
 		{name: "DelTimerConfirmPopup", classes: "onyx-sample-popup", kind: "onyx.Popup", centered: true, modal: true, floating: true, onShow: "popupShown", onHide: "popupHidden", components: [
-				{kind: "onyx.InputDecorator", name: "lblDelTimer", content: "Delete timer #", components: [
+				{kind: "onyx.InputDecorator", name: "lblDelTimer", content: "Are you sure?", components: [
 				]},
 				{tag: "br"},
 				{kind: "onyx.Button", content: "No", classes: "onyx-negative", ontap: "delTimerCancel"},
@@ -76,6 +66,17 @@ enyo.kind({
 				{kind: "onyx.Button", content: "Timer löschen", classes: "onyx-negative", ontap: "delTimer"},
 				{tag: "br"},
 				{kind: "onyx.Button", content: "Abbruch", ontap: "SelTimerClosePopup"}
+		]},
+		{name: "LoginPopup", classes: "onyx-sample-popup", kind: "onyx.Popup", centered: true, modal: true, floating: true, onShow: "popupShown", onHide: "popupHidden", components: [
+				{kind: "onyx.InputDecorator", components: [
+					{kind: "onyx.Input", placeholder: "IP address", name: "serverAddress", value: "http://192.168.2.48"}
+				]},
+				{kind: "onyx.InputDecorator", components: [
+					{kind: "onyx.Input", type:"password", name: "serverPW", placeholder: "Enter password"}
+				]},			
+				{tag: "br"},
+				{kind: "onyx.Button", content: "Save", ontap: "LoginSave"},
+				{kind: "onyx.Button", content: "Cancel", ontap: "LoginClose"}
 		]},		
 		{kind: "WebService", name:"wslogin", url: "", onResponse:"processLogin", callbackName: "callback"},
 		{kind: "WebService", name:"wstimers", url: "", onResponse:"processTimers", callbackName: "callback"},
@@ -90,6 +91,13 @@ enyo.kind({
 	},
 	startapp: function(inSender,inEvent){
 		//console.log("StartAPP");
+		TSAddress = localStorage.getItem("tsaddress");
+		TSPWMD5 = localStorage.getItem("tspwmd5");
+		console.log("geladen:" + TSAddress + " - " + TSPWMD5);
+		if (TSPWMD5 == null)
+		{
+			this.$.LoginPopup.show();
+		};
 		this.buttonTimers();			
 	},
 	resize: function() {
@@ -160,7 +168,7 @@ enyo.kind({
 	processDelTimer: function(inSender, inEvent)  {
 		this.$.DelTimerConfirmPopup.show();
 		helper = TimerID + 1;
-		this.$.lblDelTimer.setContent("Delete Timer #" + helper);
+		//this.$.lblDelTimer.setContent("Delete Timer #" + helper);
 	},
 	processSetTimer: function(inSender, inEvent)  {
 		//console.log("2");
@@ -234,7 +242,7 @@ enyo.kind({
 		request.go(); 	
 	},
 	processSTResponse2: function(inSender, inEvent) {   
-	    SetTimerUrl = "http://marcel.homelinux.org:90/index_s.html?350a7f5ee27d22dbe36698b10930ff96_newhddtimer=Neuer+DVR-Timer";
+	    SetTimerUrl = TSAddress + "/index_s.html?" + TSPWMD5 + "_newhddtimer=Neuer+DVR-Timer";
 	    params = {
 		"service_1": 0,
 		"date": "20.01",
@@ -331,9 +339,32 @@ enyo.kind({
 	},
 	delTimer: function(inSender, inEvent){
 		//TimerID = inEvent.index;
-		console.log(Timers[TimerID].titel + " " + Timers[TimerID].start);
+		//console.log(Timers[TimerID].titel + " " + Timers[TimerID].start);
 		this.$.wsdeltimer.setUrl(TSAddress + "/index_s.html?" + TSPWMD5 + "_deletetimer_" + TimerID + "=L%C3%B6schen");
 		this.$.wsdeltimer.send();				
 		this.$.TimerSelPopup.hide();
-	}	
+	},
+	MenuItemSelected: function(inSender, inEvent){
+		switch (inEvent.content) {
+		case 'Receiver setup':
+			this.$.LoginPopup.show();
+			break;
+		case 'Add new timer':
+			break;
+		}			
+		//console.log(inEvent.content);
+		//console.log(inSender);
+	},
+	LoginClose: function(inSender, inEvent){
+		this.$.LoginPopup.hide();
+	},	
+	LoginSave: function(inSender, inEvent){
+		TSPWMD5 = MD5(this.$.serverPW.getValue());
+		TSAddress = this.$.serverAddress.getValue();
+		//console.log("Neues Login: " + TSAddress + " - " + TSPWMD5);
+		localStorage.setItem("tsaddress", TSAddress);
+		localStorage.setItem("tspwmd5", TSPWMD5);
+		this.buttonTimers();		
+		this.$.LoginPopup.hide();
+	},	
 });

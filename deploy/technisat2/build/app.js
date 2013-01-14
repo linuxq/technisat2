@@ -4452,17 +4452,18 @@ this.setShowing(!1);
 
 // App.js
 
-TSAddress = "http://marcel.homelinux.org:90", TSPWMD5 = "350a7f5ee27d22dbe36698b10930ff96", TimerID = 0, Timers = new Array, enyo.kind({
+TSAddress = "", TSPWMD5 = "", TimerID = 0, Timers = new Array, enyo.kind({
 name: "App",
 kind: "FittableRows",
 classes: "onyx enyo-fit",
+style: "background-color: grey",
 components: [ {
 kind: "onyx.Toolbar",
 components: [ {
 content: "Technisat Frontend"
 }, {
 kind: "onyx.MenuDecorator",
-onSelect: "itemSelected",
+onSelect: "MenuItemSelected",
 components: [ {
 content: "Settings"
 }, {
@@ -4483,37 +4484,6 @@ kind: "onyx.Icon",
 src: "assets/menu-icon-refresh.png",
 style: "float: right",
 onclick: "buttonTimers"
-} ]
-}, {
-kind: "GTS.DividerDrawer",
-showing: !1,
-caption: "Receiver",
-open: !1,
-components: [ {
-classes: "onyx-toolbar-inline",
-components: [ {
-kind: "onyx.InputDecorator",
-components: [ {
-kind: "onyx.Input",
-placeholder: "IP address",
-name: "serverAddress",
-value: "http://192.168.2.48",
-onchange: "TSAddressChanged"
-} ]
-}, {
-kind: "onyx.InputDecorator",
-components: [ {
-kind: "onyx.Input",
-type: "password",
-name: "serverPW",
-placeholder: "Enter password",
-onchange: "TSPWChanged"
-} ]
-} ]
-}, {
-kind: "onyx.Button",
-content: "Login",
-ontap: "buttonLogin"
 } ]
 }, {
 kind: "Scroller",
@@ -4573,7 +4543,7 @@ onHide: "popupHidden",
 components: [ {
 kind: "onyx.InputDecorator",
 name: "lblDelTimer",
-content: "Delete timer #",
+content: "Are you sure?",
 components: []
 }, {
 tag: "br"
@@ -4625,6 +4595,42 @@ content: "Abbruch",
 ontap: "SelTimerClosePopup"
 } ]
 }, {
+name: "LoginPopup",
+classes: "onyx-sample-popup",
+kind: "onyx.Popup",
+centered: !0,
+modal: !0,
+floating: !0,
+onShow: "popupShown",
+onHide: "popupHidden",
+components: [ {
+kind: "onyx.InputDecorator",
+components: [ {
+kind: "onyx.Input",
+placeholder: "IP address",
+name: "serverAddress",
+value: "http://192.168.2.48"
+} ]
+}, {
+kind: "onyx.InputDecorator",
+components: [ {
+kind: "onyx.Input",
+type: "password",
+name: "serverPW",
+placeholder: "Enter password"
+} ]
+}, {
+tag: "br"
+}, {
+kind: "onyx.Button",
+content: "Save",
+ontap: "LoginSave"
+}, {
+kind: "onyx.Button",
+content: "Cancel",
+ontap: "LoginClose"
+} ]
+}, {
 kind: "WebService",
 name: "wslogin",
 url: "",
@@ -4659,7 +4665,7 @@ rendered: function(e, t) {
 this.inherited(arguments), window.setTimeout(this.startapp(), 1), this.resize();
 },
 startapp: function(e, t) {
-this.buttonTimers();
+TSAddress = localStorage.getItem("tsaddress"), TSPWMD5 = localStorage.getItem("tspwmd5"), console.log("geladen:" + TSAddress + " - " + TSPWMD5), TSPWMD5 == null && this.$.LoginPopup.show(), this.buttonTimers();
 },
 resize: function() {
 console.log("RESIZE!!!!!!"), this.reflow(), this.$.scroller.reflow(), this.$.repeater.reflow();
@@ -4680,7 +4686,7 @@ buttonSetTimer: function(e) {
 SetTimerUrl = TSAddress + "/index_s.html?" + TSPWMD5 + "_newhddtimer=Neuer+DVR-Timer", this.$.wssettimer.setUrl(SetTimerUrl), this.$.wssettimer.send(), console.log("1a");
 },
 processDelTimer: function(e, t) {
-this.$.DelTimerConfirmPopup.show(), helper = TimerID + 1, this.$.lblDelTimer.setContent("Delete Timer #" + helper);
+this.$.DelTimerConfirmPopup.show(), helper = TimerID + 1;
 },
 processSetTimer: function(e, t) {
 console.log("SetTimerSucc:" + t), this.$.lbldebug.setContent(t);
@@ -4717,7 +4723,7 @@ postBody: n
 r.response(enyo.bind(this, "processSetTimer")), r.error(this, "processSetTimerError"), r.go();
 },
 processSTResponse2: function(e, t) {
-SetTimerUrl = "http://marcel.homelinux.org:90/index_s.html?350a7f5ee27d22dbe36698b10930ff96_newhddtimer=Neuer+DVR-Timer", params = {
+SetTimerUrl = TSAddress + "/index_s.html?" + TSPWMD5 + "_newhddtimer=Neuer+DVR-Timer", params = {
 service_1: 0,
 date: "20.01",
 start: "03:00",
@@ -4765,7 +4771,21 @@ modTimer: function(e, t) {
 this.$.TimerSelPopup.hide();
 },
 delTimer: function(e, t) {
-console.log(Timers[TimerID].titel + " " + Timers[TimerID].start), this.$.wsdeltimer.setUrl(TSAddress + "/index_s.html?" + TSPWMD5 + "_deletetimer_" + TimerID + "=L%C3%B6schen"), this.$.wsdeltimer.send(), this.$.TimerSelPopup.hide();
+this.$.wsdeltimer.setUrl(TSAddress + "/index_s.html?" + TSPWMD5 + "_deletetimer_" + TimerID + "=L%C3%B6schen"), this.$.wsdeltimer.send(), this.$.TimerSelPopup.hide();
+},
+MenuItemSelected: function(e, t) {
+switch (t.content) {
+case "Receiver setup":
+this.$.LoginPopup.show();
+break;
+case "Add new timer":
+}
+},
+LoginClose: function(e, t) {
+this.$.LoginPopup.hide();
+},
+LoginSave: function(e, t) {
+TSPWMD5 = MD5(this.$.serverPW.getValue()), TSAddress = this.$.serverAddress.getValue(), localStorage.setItem("tsaddress", TSAddress), localStorage.setItem("tspwmd5", TSPWMD5), this.buttonTimers(), this.$.LoginPopup.hide();
 }
 });
 
@@ -4830,6 +4850,143 @@ var r = e.length, i = e.indexOf(">", 0);
 if (i || 0) e = e.substring(i + 1, r);
 return e;
 };
+
+// md5.js
+
+function array(e) {
+for (i = 0; i < e; i++) this[i] = 0;
+this.length = e;
+}
+
+function integer(e) {
+return e % 4294967296;
+}
+
+function shr(e, t) {
+return e = integer(e), t = integer(t), e - 2147483648 >= 0 ? (e %= 2147483648, e >>= t, e += 1073741824 >> t - 1) : e >>= t, e;
+}
+
+function shl1(e) {
+return e %= 2147483648, e & !0 ? (e -= 1073741824, e *= 2, e += 2147483648) : e *= 2, e;
+}
+
+function shl(e, t) {
+e = integer(e), t = integer(t);
+for (var n = 0; n < t; n++) e = shl1(e);
+return e;
+}
+
+function and(e, t) {
+e = integer(e), t = integer(t);
+var n = e - 2147483648, r = t - 2147483648;
+return n >= 0 ? r >= 0 ? (n & r) + 2147483648 : n & t : r >= 0 ? e & r : e & t;
+}
+
+function or(e, t) {
+e = integer(e), t = integer(t);
+var n = e - 2147483648, r = t - 2147483648;
+return n >= 0 ? r >= 0 ? (n | r) + 2147483648 : (n | t) + 2147483648 : r >= 0 ? (e | r) + 2147483648 : e | t;
+}
+
+function xor(e, t) {
+e = integer(e), t = integer(t);
+var n = e - 2147483648, r = t - 2147483648;
+return n >= 0 ? r >= 0 ? n ^ r : (n ^ t) + 2147483648 : r >= 0 ? (e ^ r) + 2147483648 : e ^ t;
+}
+
+function not(e) {
+return e = integer(e), 4294967295 - e;
+}
+
+function F(e, t, n) {
+return or(and(e, t), and(not(e), n));
+}
+
+function G(e, t, n) {
+return or(and(e, n), and(t, not(n)));
+}
+
+function H(e, t, n) {
+return xor(xor(e, t), n);
+}
+
+function I(e, t, n) {
+return xor(t, or(e, not(n)));
+}
+
+function rotateLeft(e, t) {
+return or(shl(e, t), shr(e, 32 - t));
+}
+
+function FF(e, t, n, r, i, s, o) {
+return e = e + F(t, n, r) + i + o, e = rotateLeft(e, s), e += t, e;
+}
+
+function GG(e, t, n, r, i, s, o) {
+return e = e + G(t, n, r) + i + o, e = rotateLeft(e, s), e += t, e;
+}
+
+function HH(e, t, n, r, i, s, o) {
+return e = e + H(t, n, r) + i + o, e = rotateLeft(e, s), e += t, e;
+}
+
+function II(e, t, n, r, i, s, o) {
+return e = e + I(t, n, r) + i + o, e = rotateLeft(e, s), e += t, e;
+}
+
+function transform(e, t) {
+var n = 0, r = 0, s = 0, o = 0, u = transformBuffer;
+n = state[0], r = state[1], s = state[2], o = state[3];
+for (i = 0; i < 16; i++) {
+u[i] = and(e[i * 4 + t], 255);
+for (j = 1; j < 4; j++) u[i] += shl(and(e[i * 4 + j + t], 255), j * 8);
+}
+n = FF(n, r, s, o, u[0], S11, 3614090360), o = FF(o, n, r, s, u[1], S12, 3905402710), s = FF(s, o, n, r, u[2], S13, 606105819), r = FF(r, s, o, n, u[3], S14, 3250441966), n = FF(n, r, s, o, u[4], S11, 4118548399), o = FF(o, n, r, s, u[5], S12, 1200080426), s = FF(s, o, n, r, u[6], S13, 2821735955), r = FF(r, s, o, n, u[7], S14, 4249261313), n = FF(n, r, s, o, u[8], S11, 1770035416), o = FF(o, n, r, s, u[9], S12, 2336552879), s = FF(s, o, n, r, u[10], S13, 4294925233), r = FF(r, s, o, n, u[11], S14, 2304563134), n = FF(n, r, s, o, u[12], S11, 1804603682), o = FF(o, n, r, s, u[13], S12, 4254626195), s = FF(s, o, n, r, u[14], S13, 2792965006), r = FF(r, s, o, n, u[15], S14, 1236535329), n = GG(n, r, s, o, u[1], S21, 4129170786), o = GG(o, n, r, s, u[6], S22, 3225465664), s = GG(s, o, n, r, u[11], S23, 643717713), r = GG(r, s, o, n, u[0], S24, 3921069994), n = GG(n, r, s, o, u[5], S21, 3593408605), o = GG(o, n, r, s, u[10], S22, 38016083), s = GG(s, o, n, r, u[15], S23, 3634488961), r = GG(r, s, o, n, u[4], S24, 3889429448), n = GG(n, r, s, o, u[9], S21, 568446438), o = GG(o, n, r, s, u[14], S22, 3275163606), s = GG(s, o, n, r, u[3], S23, 4107603335), r = GG(r, s, o, n, u[8], S24, 1163531501), n = GG(n, r, s, o, u[13], S21, 2850285829), o = GG(o, n, r, s, u[2], S22, 4243563512), s = GG(s, o, n, r, u[7], S23, 1735328473), r = GG(r, s, o, n, u[12], S24, 2368359562), n = HH(n, r, s, o, u[5], S31, 4294588738), o = HH(o, n, r, s, u[8], S32, 2272392833), s = HH(s, o, n, r, u[11], S33, 1839030562), r = HH(r, s, o, n, u[14], S34, 4259657740), n = HH(n, r, s, o, u[1], S31, 2763975236), o = HH(o, n, r, s, u[4], S32, 1272893353), s = HH(s, o, n, r, u[7], S33, 4139469664), r = HH(r, s, o, n, u[10], S34, 3200236656), n = HH(n, r, s, o, u[13], S31, 681279174), o = HH(o, n, r, s, u[0], S32, 3936430074), s = HH(s, o, n, r, u[3], S33, 3572445317), r = HH(r, s, o, n, u[6], S34, 76029189), n = HH(n, r, s, o, u[9], S31, 3654602809), o = HH(o, n, r, s, u[12], S32, 3873151461), s = HH(s, o, n, r, u[15], S33, 530742520), r = HH(r, s, o, n, u[2], S34, 3299628645), n = II(n, r, s, o, u[0], S41, 4096336452), o = II(o, n, r, s, u[7], S42, 1126891415), s = II(s, o, n, r, u[14], S43, 2878612391), r = II(r, s, o, n, u[5], S44, 4237533241), n = II(n, r, s, o, u[12], S41, 1700485571), o = II(o, n, r, s, u[3], S42, 2399980690), s = II(s, o, n, r, u[10], S43, 4293915773), r = II(r, s, o, n, u[1], S44, 2240044497), n = II(n, r, s, o, u[8], S41, 1873313359), o = II(o, n, r, s, u[15], S42, 4264355552), s = II(s, o, n, r, u[6], S43, 2734768916), r = II(r, s, o, n, u[13], S44, 1309151649), n = II(n, r, s, o, u[4], S41, 4149444226), o = II(o, n, r, s, u[11], S42, 3174756917), s = II(s, o, n, r, u[2], S43, 718787259), r = II(r, s, o, n, u[9], S44, 3951481745), state[0] += n, state[1] += r, state[2] += s, state[3] += o;
+}
+
+function init() {
+count[0] = count[1] = 0, state[0] = 1732584193, state[1] = 4023233417, state[2] = 2562383102, state[3] = 271733878;
+for (i = 0; i < digestBits.length; i++) digestBits[i] = 0;
+}
+
+function update(e) {
+var t, n;
+t = and(shr(count[0], 3), 63), count[0] < 4294967288 ? count[0] += 8 : (count[1]++, count[0] -= 4294967296, count[0] += 8), buffer[t] = and(e, 255), t >= 63 && transform(buffer, 0);
+}
+
+function finish() {
+var e = new array(8), t, n = 0, r = 0, i = 0;
+for (n = 0; n < 4; n++) e[n] = and(shr(count[0], n * 8), 255);
+for (n = 0; n < 4; n++) e[n + 4] = and(shr(count[1], n * 8), 255);
+r = and(shr(count[0], 3), 63), i = r < 56 ? 56 - r : 120 - r, t = new array(64), t[0] = 128;
+for (n = 0; n < i; n++) update(t[n]);
+for (n = 0; n < 8; n++) update(e[n]);
+for (n = 0; n < 4; n++) for (j = 0; j < 4; j++) digestBits[n * 4 + j] = and(shr(state[n], j * 8), 255);
+}
+
+function hexa(e) {
+var t = "0123456789abcdef", n = "", r = e;
+for (hexa_i = 0; hexa_i < 8; hexa_i++) n = t.charAt(Math.abs(r) % 16) + n, r = Math.floor(r / 16);
+return n;
+}
+
+function MD5(e) {
+var t, n, r, s, o, u, a;
+init();
+for (r = 0; r < e.length; r++) t = e.charAt(r), update(ascii.lastIndexOf(t));
+finish(), s = o = u = a = 0;
+for (i = 0; i < 4; i++) s += shl(digestBits[15 - i], i * 8);
+for (i = 4; i < 8; i++) o += shl(digestBits[15 - i], (i - 4) * 8);
+for (i = 8; i < 12; i++) u += shl(digestBits[15 - i], (i - 8) * 8);
+for (i = 12; i < 16; i++) a += shl(digestBits[15 - i], (i - 12) * 8);
+return n = hexa(a) + hexa(u) + hexa(o) + hexa(s), n;
+}
+
+var state = new array(4), count = new array(2);
+
+count[0] = 0, count[1] = 0;
+
+var buffer = new array(64), transformBuffer = new array(16), digestBits = new array(16), S11 = 7, S12 = 12, S13 = 17, S14 = 22, S21 = 5, S22 = 9, S23 = 14, S24 = 20, S31 = 4, S32 = 11, S33 = 16, S34 = 23, S41 = 6, S42 = 10, S43 = 15, S44 = 21, ascii = "01234567890123456789012345678901 !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~";
 
 // DividerDrawer.js
 

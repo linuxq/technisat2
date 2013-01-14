@@ -5,5 +5,6 @@ enyo.depends(
 	"App.css",
 	"App.js",
         "toolset.js",
+        "md5.js",
         "DividerDrawer"
 );
