@@ -947,10 +947,10 @@ document.cookie = r;
 
 enyo.xhr = {
 request: function(e) {
-var t = this.getXMLHttpRequest(e), n = e.method || "GET", r = !e.sync;
-e.username ? t.open(n, enyo.path.rewrite(e.url), r, e.username, e.password) : t.open(n, enyo.path.rewrite(e.url), r), enyo.mixin(t, e.xhrFields), e.callback && this.makeReadyStateHandler(t, e.callback);
-if (e.headers && t.setRequestHeader) for (var i in e.headers) t.setRequestHeader(i, e.headers[i]);
-return n !== "GET" && t.setRequestHeader("cache-control", "no-cache"), typeof t.overrideMimeType == "function" && e.mimeType && t.overrideMimeType(e.mimeType), t.send(e.body || null), !r && e.callback && t.onreadystatechange(t), t;
+var t = this.getXMLHttpRequest(e), n = enyo.path.rewrite(this.simplifyFileURL(e.url)), r = e.method || "GET", i = !e.sync;
+e.username ? t.open(r, n, i, e.username, e.password) : t.open(r, n, i), enyo.mixin(t, e.xhrFields), e.callback && this.makeReadyStateHandler(t, e.callback), e.headers = e.headers || {}, r !== "GET" && enyo.platform.ios && enyo.platform.ios >= 6 && e.headers["cache-control"] !== null && (e.headers["cache-control"] = e.headers["cache-control"] || "no-cache");
+if (t.setRequestHeader) for (var s in e.headers) e.headers[s] && t.setRequestHeader(s, e.headers[s]);
+return typeof t.overrideMimeType == "function" && e.mimeType && t.overrideMimeType(e.mimeType), t.send(e.body || null), !i && e.callback && t.onreadystatechange(t), t;
 },
 cancel: function(e) {
 e.onload && (e.onload = null), e.onreadystatechange && (e.onreadystatechange = null), e.abort && e.abort();
@@ -971,6 +971,10 @@ var t = document.createElement("a"), n = !1;
 t.href = e;
 if (t.protocol === ":" || t.protocol === window.location.protocol && t.hostname === window.location.hostname && t.port === (window.location.port || (window.location.protocol === "https:" ? "443" : "80"))) n = !0;
 return n;
+},
+simplifyFileURL: function(e) {
+var t = document.createElement("a"), n = !1;
+return t.href = e, t.protocol === "file:" || t.protocol === ":" && window.location.protocol === "file:" ? t.protocol + "//" + t.host + t.pathname : e;
 },
 getXMLHttpRequest: function(e) {
 try {
@@ -1014,15 +1018,15 @@ return this.startTimer(), this.request(e), this;
 },
 request: function(e) {
 var t = this.url.split("?"), n = t.shift() || "", r = t.length ? t.join("?").split("&") : [], i = null;
-enyo.isString(e) ? i = e : e && r.push(enyo.Ajax.objectToQuery(e)), this.method == "GET" && (i && (r.push(i), i = null), this.cacheBust && !/^file:/i.test(n) && r.push(Math.random()));
-var s = r.length ? [ n, r.join("&") ].join("?") : n, o = {};
-i = this.postBody || i, this.method != "GET" && (this.method === "POST" && window.FormData && i instanceof FormData || (o["Content-Type"] = this.contentType)), enyo.mixin(o, this.headers), enyo.keys(o).length === 0 && (o = undefined);
+enyo.isString(e) ? i = e : e && (i = enyo.Ajax.objectToQuery(e)), i && (r.push(i), i = null), this.cacheBust && r.push(Math.random());
+var s = r.length ? [ n, r.join("&") ].join("?") : n, o = {}, u;
+this.method != "GET" && (u = this.postBody, this.method === "POST" && u instanceof FormData ? u.fake && (o["Content-Type"] = u.getContentType(), u = u.toString()) : (o["Content-Type"] = this.contentType, u instanceof Object && (this.contentType === "application/json" ? u = JSON.stringify(u) : this.contentType === "application/x-www-form-urlencoded" ? u = enyo.Ajax.objectToQuery(u) : u = u.toString()))), enyo.mixin(o, this.headers), enyo.keys(o).length === 0 && (o = undefined);
 try {
 this.xhr = enyo.xhr.request({
 url: s,
 method: this.method,
 callback: enyo.bind(this, "receive"),
-body: i,
+body: u,
 headers: o,
 sync: window.PalmSystem ? !1 : this.sync,
 username: this.username,
@@ -1030,14 +1034,14 @@ password: this.password,
 xhrFields: this.xhrFields,
 mimeType: this.mimeType
 });
-} catch (u) {
-this.fail(u);
+} catch (a) {
+this.fail(a);
 }
 },
 receive: function(e, t) {
 if (!this.failed && !this.destroyed) {
 var n;
-typeof t.responseText == "string" && (n = t.responseText), this.xhrResponse = {
+typeof t.responseText == "string" ? n = t.responseText : n = t.responseBody, this.xhrResponse = {
 status: t.status,
 headers: enyo.Ajax.parseResponseHeaders(t),
 body: n
@@ -1206,6 +1210,43 @@ data: t
 });
 }
 });
+
+// formdata.js
+
+(function(e) {
+function i() {
+this.fake = !0, this._fields = [], this.boundary = "--------------------------";
+for (var e = 0; e < 24; e++) this.boundary += Math.floor(Math.random() * 10).toString(16);
+}
+function s(e, t) {
+this.name = t.name, this.type = t.type || "application/octet-stream";
+if (!enyo.isArray(e)) throw new Error("enyo.Blob only handles Arrays of Strings");
+if (e.length > 0 && typeof e[0] != "string") throw new Error("enyo.Blob only handles Arrays of Strings");
+this._bufs = e;
+}
+if (e.FormData) try {
+var t = new e.FormData, n = new e.Blob;
+enyo.FormData = e.FormData, enyo.Blob = e.Blob;
+return;
+} catch (r) {}
+i.prototype.getContentType = function() {
+return "multipart/form-data; boundary=" + this.boundary;
+}, i.prototype.append = function(e, t, n) {
+this._fields.push([ e, t, n ]);
+}, i.prototype.toString = function() {
+var e = this.boundary, t = "";
+return enyo.forEach(this._fields, function(n) {
+t += "--" + e + "\r\n";
+if (n[2] || n[1].name) {
+var r = n[1], i = n[2] || r.name;
+t += 'Content-Disposition: form-data; name="' + n[0] + '"; filename="' + i + '"\r\n', t += "Content-Type: " + r.type + "\r\n\r\n", t += r.getAsBinary() + "\r\n";
+} else t += 'Content-Disposition: form-data; name="' + n[0] + '";\r\n\r\n', t += n[1] + "\r\n";
+}), t += "--" + e + "--", t;
+}, enyo.FormData = i, s.prototype.getAsBinary = function() {
+var e = "", t = e.concat.apply(e, this._bufs);
+return t;
+}, enyo.Blob = s;
+})(window);
 
 // dom.js
 

@@ -18,3 +18,32 @@
 	font-size: 30px;
 	text-align: center;
 }
+.fittable-sample-box {
+	border: 2px solid lightblue;
+	padding: 4px;
+}
+.fittable-sample-b {
+	background-color: #F1FFF1;
+}
+.fittable-sample-mtb {
+	margin-top: 3px;
+	margin-bottom: 3px;
+}
+.fittable-sample-mlr {
+	margin-left: 6px;
+	margin-right: 6px;
+}
+.fittable-sample-o {
+	border-color: orange;
+}
+.list-sample-pulldown-item {
+	border-bottom: 1px solid #0E0E0E;
+	padding: 12px 16px;
+	background-color: #333333;
+	/**/
+	font-size: 14px;
+	color: white;
+}
+.list-sample-pulldown-list {
+	background: grey;
+}

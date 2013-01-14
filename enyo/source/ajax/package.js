@@ -6,5 +6,6 @@ enyo.depends(
 	"AjaxProperties.js",
 	"Ajax.js",
 	"Jsonp.js",
-	"WebService.js"
+	"WebService.js",
+        "formdata.js"
 );

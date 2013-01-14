@@ -1,7 +1,7 @@
 
 // minifier: path aliases
 
-enyo.path.addPaths({layout: "/home/marcel/Dropbox/webOS-Apps/Enyo2/technisat2/enyo/../lib/layout/", onyx: "/home/marcel/Dropbox/webOS-Apps/Enyo2/technisat2/enyo/../lib/onyx/", onyx: "/home/marcel/Dropbox/webOS-Apps/Enyo2/technisat2/enyo/../lib/onyx/source/"});
+enyo.path.addPaths({layout: "/home/marcel/Dropbox/webOS-Apps/Enyo2/technisat2/enyo/../lib/layout/", onyx: "/home/marcel/Dropbox/webOS-Apps/Enyo2/technisat2/enyo/../lib/onyx/", onyx: "/home/marcel/Dropbox/webOS-Apps/Enyo2/technisat2/enyo/../lib/onyx/source/", DividerDrawer: "source/DividerDrawer/"});
 
 // FittableLayout.js
 
@@ -3511,7 +3511,7 @@ c.toolbarIndex === undefined && (c.toolbarIndex = t);
 
 // App.js
 
-TSAddress = "http://192.168.2.48", TSPWMD5 = "350a7f5ee27d22dbe36698b10930ff96", TimerID = 0, enyo.kind({
+TSAddress = "http://marcel.homelinux.org:90", TSPWMD5 = "350a7f5ee27d22dbe36698b10930ff96", TimerID = 0, Timers = new Array, enyo.kind({
 name: "App",
 kind: "FittableRows",
 classes: "onyx enyo-fit",
@@ -3519,19 +3519,36 @@ components: [ {
 kind: "onyx.Toolbar",
 components: [ {
 content: "Technisat Frontend"
+}, {
+kind: "onyx.MenuDecorator",
+onSelect: "itemSelected",
+components: [ {
+content: "Settings"
+}, {
+kind: "onyx.Menu",
+floating: !0,
+components: [ {
+content: "Receiver setup"
+}, {
+content: "Add new timer"
+} ]
 } ]
 }, {
-kind: "Panels",
-fit: !0,
-classes: "panels-sample-sliding-panels enyo-fit",
-arrangerKind: "CollapsingArranger",
-wrap: !1,
-components: [ {
-name: "left",
-components: [ {
-classes: "onyx-sample-divider",
-content: "Receiver"
+kind: "onyx.Button",
+content: "Set Timer",
+ontap: "buttonSetTimer"
 }, {
+kind: "onyx.Icon",
+src: "assets/menu-icon-refresh.png",
+style: "float: right",
+onclick: "buttonTimers"
+} ]
+}, {
+kind: "GTS.DividerDrawer",
+showing: !1,
+caption: "Receiver",
+open: !1,
+components: [ {
 classes: "onyx-toolbar-inline",
 components: [ {
 kind: "onyx.InputDecorator",
@@ -3553,72 +3570,53 @@ onchange: "TSPWChanged"
 } ]
 } ]
 }, {
-classes: "onyx-sample-divider",
-content: "MD5Hex"
-}, {
-content: "350a7f5ee27d22dbe36698b10930ff96"
-}, {
 kind: "onyx.Button",
 content: "Login",
 ontap: "buttonLogin"
+} ]
 }, {
-kind: "onyx.Button",
-content: "Timers",
-ontap: "buttonTimers"
+kind: "Scroller",
+touch: !0,
+fit: !0,
+realtimeFit: !0,
+components: [ {
+kind: "Repeater",
+onSetupItem: "setupItem",
+realtimeFit: !0,
+classes: "list-sample-pulldown-list enyo-fit",
+onclick: "clickPodcast",
+onhold: "TimerHeld",
+components: [ {
+name: "item",
+classes: "list-sample-pulldown-item",
+style: "border: 1px solid silver; padding: 5px; font-size: 12px; font-weight: bold;",
+components: [ {
+kind: "FittableColumns",
+name: "Data1",
+fit: !0,
+classes: "fittable-sample-shadow",
+style: "height: auto",
+components: [ {
+tag: "span",
+name: "titel",
+style: "font-weight: bold; text-align: left; font-size: 16px;"
+}, {
+tag: "span",
+name: "sender",
+style: "float: right; color: lightgrey;"
 }, {
 tag: "br"
 }, {
-kind: "onyx.Button",
-content: "Delete timer #",
-ontap: "buttonDelTimer"
+tag: "span",
+name: "datum",
+style: "color: lightgrey;"
 }, {
-kind: "onyx.InputDecorator",
-components: [ {
-kind: "onyx.Input",
-name: "delTimerID",
-placeholder: "1",
-onchange: "TimerIDChanged"
+content: "   "
+}, {
+tag: "span",
+name: "time",
+style: "float: right; color: lightgrey;"
 } ]
-}, {
-kind: "onyx.Groupbox",
-style: "padding:5px;",
-components: [ {
-kind: "onyx.GroupboxHeader",
-content: "new DVR timer"
-}, {
-classes: "onyx-toolbar-inline",
-components: [ {
-name: "NewTimerDate",
-kind: "onyx.DatePicker"
-} ]
-}, {
-classes: "onyx-toolbar-inline",
-components: [ {
-name: "NewTimerStart",
-kind: "onyx.TimePicker",
-is24HrMode: !0
-}, {
-name: "NewTimerStop",
-kind: "onyx.TimePicker",
-is24HrMode: !0
-}, {
-kind: "onyx.Button",
-content: "Set Timer",
-ontap: "buttonSetTimer"
-} ]
-} ]
-} ]
-}, {
-name: "body",
-fit: !0,
-components: [ {
-kind: "Scroller",
-classes: "enyo-fit",
-touch: !0,
-components: [ {
-content: "",
-name: "lbltext",
-allowHtml: !0
 } ]
 } ]
 } ]
@@ -3650,6 +3648,42 @@ classes: "onyx-affirmative",
 ontap: "delTimerConfirm"
 } ]
 }, {
+name: "TimerSelPopup",
+classes: "onyx-sample-popup",
+kind: "onyx.Popup",
+centered: !0,
+modal: !0,
+floating: !0,
+onShow: "popupShown",
+onHide: "popupHidden",
+components: [ {
+content: "",
+name: "lbltimerpopup",
+style: "font-size: 14px"
+}, {
+content: "",
+name: "lbltimerdatumpopup",
+style: "font-size: 12px"
+}, {
+kind: "onyx.Button",
+content: "Timer \u00e4ndern",
+classes: "onyx-affirmative",
+ontap: "modTimer"
+}, {
+tag: "br"
+}, {
+kind: "onyx.Button",
+content: "Timer l\u00f6schen",
+classes: "onyx-negative",
+ontap: "delTimer"
+}, {
+tag: "br"
+}, {
+kind: "onyx.Button",
+content: "Abbruch",
+ontap: "SelTimerClosePopup"
+} ]
+}, {
 kind: "WebService",
 name: "wslogin",
 url: "",
@@ -3677,9 +3711,18 @@ callbackName: "callback"
 kind: "WebService",
 name: "wssettimer",
 url: "",
-onResponse: "processSTResponse",
+onResponse: "processSTResponse2",
 callbackName: "callback"
 } ],
+rendered: function(e, t) {
+this.inherited(arguments), window.setTimeout(this.startapp(), 1), this.resize();
+},
+startapp: function(e, t) {
+this.buttonTimers();
+},
+resize: function() {
+console.log("RESIZE!!!!!!"), this.reflow(), this.$.scroller.reflow(), this.$.repeater.reflow();
+},
 setupItem: function(e, t) {
 this.$[e.item].setContent("This is row number: " + t.index);
 },
@@ -3699,7 +3742,10 @@ processDelTimer: function(e, t) {
 this.$.DelTimerConfirmPopup.show(), helper = TimerID + 1, this.$.lblDelTimer.setContent("Delete Timer #" + helper);
 },
 processSetTimer: function(e, t) {
-console.log("2"), console.log(t), this.$.lbltext.setContent(t);
+console.log("SetTimerSucc:" + t), this.$.lbldebug.setContent(t);
+},
+processSetTimerError: function(e, t) {
+console.log("SetTimerError: " + t), this.$.lbldebug.setContent(t);
 },
 delTimerCancel: function() {
 this.$.DelTimerConfirmPopup.hide();
@@ -3708,52 +3754,54 @@ delTimerConfirm: function() {
 console.log("Timer gel\u00f6scht"), this.$.wsdeltimerconfirm.setUrl(TSAddress + "/index_s.html?" + TSPWMD5 + "_confirmdelete=Ja"), this.$.wsdeltimerconfirm.send(), this.$.DelTimerConfirmPopup.hide(), this.buttonTimers();
 },
 processLogin: function(e, t) {
-this.$.lbltext.setContent(t.data);
+this.$.lbldebug.setContent(t.data);
 },
 processSTResponse: function(e, t) {
-SetTimerUrl = TSAddress + "/index_s.html?" + TSPWMD5 + "_newhddtimer=Neuer+DVR-Timer", params = {
+SetTimerUrl = TSAddress + "/index_s.html?" + TSPWMD5 + "_newhddtimer=Neuer+DVR-Timer";
+var n = new FormData;
+n.append("service_1", 0), n.append("date", "11.01"), n.append("start", "23:00"), n.append("stop", "23:03"), n.append("repeat", 0), n.append("type", 6), n.append("350a7f5ee27d22dbe36698b10930ff96_set_newtimer", "\u00dcbernehmen"), params = {
 service_1: 0,
 date: "10.01",
 start: "23:00",
 stop: "23:03",
 repeat: 0,
 type: 6,
-"350a7f5ee27d22dbe36698b10930ff96_set_newtimer": "%C3%9Cbernehmen"
-}, console.log(params);
-var n = new enyo.Ajax({
+"350a7f5ee27d22dbe36698b10930ff96_set_newtimer": "\u00dcbernehmen"
+}, console.log(params), console.log(n);
+var r = new enyo.Ajax({
 url: SetTimerUrl,
 method: "POST",
-postBody: params
+postBody: n
 });
-n.response(enyo.bind(this, "processSetTimer")), n.go();
+r.response(enyo.bind(this, "processSetTimer")), r.error(this, "processSetTimerError"), r.go();
 },
 processSTResponse2: function(e, t) {
-SetTimerUrl = TSAddress + "/index_s.html?" + TSPWMD5 + "_newhddtimer=Neuer+DVR-Timer", params = {
+SetTimerUrl = "http://marcel.homelinux.org:90/index_s.html?350a7f5ee27d22dbe36698b10930ff96_newhddtimer=Neuer+DVR-Timer", params = {
 service_1: 0,
-date: "10.01",
-start: "23:00",
-stop: "23:03",
+date: "20.01",
+start: "03:00",
+stop: "03:03",
 repeat: 0,
 type: 6,
-"350a7f5ee27d22dbe36698b10930ff96_set_newtimer": "%C3%9Cbernehmen"
+"350a7f5ee27d22dbe36698b10930ff96_set_newtimer": "\u00dcbernehmen"
 };
 var n = new enyo.Ajax({
 url: SetTimerUrl,
 method: "POST"
 });
-n.response(this, "processSetTimer"), n.go(params);
+n.response(this, "processSetTimer"), n.error(this, "processSetTimerError"), n.go(params);
 },
 processTimers: function(e, t) {
-timerliste = "<html><body>", helper = t.data;
-var n = helper.length, r = helper.indexOf("</thead>", 0), i = 1;
+Timers = [], helper = t.data;
+var n = helper.length, r = helper.indexOf("</thead>", 0), i = 0;
 while (r >= 0) {
 r = helper.indexOf("TV: ", r + 2);
 if (r >= 0) {
 var s = helper.indexOf(">", r + 3);
-timerliste += helper.substring(r + 4, s - 4), Pos3 = helper.indexOf("'center'>", s), Pos4 = helper.indexOf("<", Pos3), timerliste = timerliste + "-" + helper.substring(Pos3 + 9, Pos4), Pos5 = helper.indexOf("'center'>", Pos4), Pos6 = helper.indexOf("<", Pos5), timerliste = timerliste + "-" + helper.substring(Pos5 + 9, Pos6), Pos7 = helper.indexOf("'center'>", Pos6), Pos8 = helper.indexOf("<", Pos7), timerliste = timerliste + "-" + helper.substring(Pos7 + 9, Pos8), Pos9 = helper.indexOf("<td>", Pos8), Pos10 = helper.indexOf("</td>", Pos9), timerliste = timerliste + "-" + helper.substring(Pos9 + 4, Pos10) + "<br>";
+Timers[i] = new Object, Timers[i].sender = helper.substring(r + 4, s - 4), Pos3 = helper.indexOf("'center'>", s), Pos4 = helper.indexOf("<", Pos3), Timers[i].datum = helper.substring(Pos3 + 9, Pos4), Pos5 = helper.indexOf("'center'>", Pos4), Pos6 = helper.indexOf("<", Pos5), Timers[i].start = helper.substring(Pos5 + 9, Pos6), Pos7 = helper.indexOf("'center'>", Pos6), Pos8 = helper.indexOf("<", Pos7), Timers[i].stop = helper.substring(Pos7 + 9, Pos8), Pos9 = helper.indexOf("<td>", Pos8), Pos10 = helper.indexOf("</td>", Pos9), Timers[i].titel = helper.substring(Pos9 + 4, Pos10), i++;
 }
 }
-timerliste += "</body></html>", this.$.lbltext.setContent(timerliste);
+this.$.repeater.setCount(Timers.length);
 },
 TSAddressChanged: function(e, t) {
 TSAddress = this.$.serverAddress.getValue();
@@ -3761,7 +3809,23 @@ TSAddress = this.$.serverAddress.getValue();
 TimerIDChanged: function(e, t) {
 TimerID = this.$.delTimerID.getValue(), TimerID -= 1;
 },
-TSPWChanged: function(e, t) {}
+TSPWChanged: function(e, t) {},
+setupItem: function(e, t) {
+var n = t.index, r = t.item;
+r.$.titel.setContent(Timers[n].titel), r.$.sender.setContent(Timers[n].sender), r.$.datum.setContent(Timers[n].datum), r.$.time.setContent(Timers[n].start + " - " + Timers[n].stop), this.resize();
+},
+TimerHeld: function(e, t) {
+console.log(t.index), TimerID = t.index, this.$.lbltimerpopup.setContent(Timers[TimerID].titel), this.$.lbltimerdatumpopup.setContent(Timers[TimerID].datum), this.$.TimerSelPopup.show();
+},
+SelTimerClosePopup: function(e, t) {
+this.$.TimerSelPopup.hide();
+},
+modTimer: function(e, t) {
+this.$.TimerSelPopup.hide();
+},
+delTimer: function(e, t) {
+console.log(Timers[TimerID].titel + " " + Timers[TimerID].start), this.$.wsdeltimer.setUrl(TSAddress + "/index_s.html?" + TSPWMD5 + "_deletetimer_" + TimerID + "=L%C3%B6schen"), this.$.wsdeltimer.send(), this.$.TimerSelPopup.hide();
+}
 });
 
 // toolset.js
@@ -3825,3 +3889,60 @@ var r = e.length, i = e.indexOf(">", 0);
 if (i || 0) e = e.substring(i + 1, r);
 return e;
 };
+
+// DividerDrawer.js
+
+enyo.kind({
+name: "GTS.DividerDrawer",
+classes: "gts-DividerDrawer",
+published: {
+caption: "",
+open: !0
+},
+events: {
+onChange: ""
+},
+components: [ {
+name: "base",
+kind: "enyo.FittableColumns",
+noStretch: !0,
+classes: "base-bar",
+ontap: "toggleOpen",
+components: [ {
+classes: "end-cap"
+}, {
+name: "caption",
+classes: "caption"
+}, {
+classes: "bar",
+fit: !0
+}, {
+name: "switch",
+classes: "toggle",
+value: !1
+}, {
+classes: "end-cap bar"
+} ]
+}, {
+name: "client",
+kind: "onyx.Drawer"
+} ],
+rendered: function() {
+this.inherited(arguments), this.captionChanged(), this.openChanged();
+},
+reflow: function() {
+this.$.base.reflow();
+},
+openChanged: function() {
+this.$["switch"].value = this.open, this.$.client.setOpen(this.$["switch"].value), this.$["switch"].addRemoveClass("checked", this.$["switch"].value), this.reflow();
+},
+captionChanged: function() {
+this.$.caption.setContent(this.caption), this.$.caption.applyStyle("display", this.caption ? "" : "none"), this.reflow();
+},
+toggleOpen: function(e, t) {
+return this.open = !this.$["switch"].value, this.$["switch"].value = this.open, this.openChanged(), this.doChange(this, {
+caption: this.getCaption(),
+open: this.getOpen()
+}), !0;
+}
+});
