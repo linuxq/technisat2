@@ -1,0 +1,5 @@
+First:
+curl http://192.168.2.48/index_s.html?350a7f5ee27d22dbe36698b10930ff96_newhddtimer=Neuer+DVR-Timer
+
+Then: 
+curl -X POST -d service_1="0" -d date="18.01" -d start="15:01" -d stop="15:02" -d repeat="0" -d type="6" -d 350a7f5ee27d22dbe36698b10930ff96_set_newtimer="Übernehmen" -d tvMode="1_350a7f5ee27d22dbe36698b10930ff96_set_tvMode_backtonew" http://192.168.2.48/index_s.html?350a7f5ee27d22dbe36698b10930ff96_newhddtimer=Neuer+DVR-Timer > response.html

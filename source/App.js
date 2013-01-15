@@ -82,7 +82,7 @@ enyo.kind({
 		{kind: "WebService", name:"wstimers", url: "", onResponse:"processTimers", callbackName: "callback"},
 		{kind: "WebService", name:"wsdeltimer", url: "", onResponse:"processDelTimer", callbackName: "callback"},
 		{kind: "WebService", name:"wsdeltimerconfirm", url: "", onResponse:"", callbackName: "callback"},
-		{kind: "WebService", name:"wssettimer", url: "", onResponse:"processSTResponse2", callbackName: "callback"},
+		{kind: "WebService", name:"wssettimer", url: "", onResponse:"processSTResponse", callbackName: "callback"},
 	],
 	rendered: function(inSender, inEvent) {
 		this.inherited(arguments);
@@ -173,7 +173,7 @@ enyo.kind({
 	processSetTimer: function(inSender, inEvent)  {
 		//console.log("2");
 		console.log("SetTimerSucc:" + inEvent);
-		this.$.lbldebug.setContent(inEvent);
+		//this.$.lbldebug.setContent(inEvent);
 	},
 	processSetTimerError: function(inSender, inEvent)  {
 		//console.log("");
@@ -205,8 +205,9 @@ enyo.kind({
 		SetTimerUrl = TSAddress + "/index_s.html?" + TSPWMD5 + "_newhddtimer=Neuer+DVR-Timer";
 		
 		var formData = new FormData();
+		formData.append("tvMode", "1_350a7f5ee27d22dbe36698b10930ff96_set_tvMode_backtonew");
 		formData.append("service_1", 0);
-		formData.append("date", "11.01");
+		formData.append("date", "20.01");
 		formData.append("start", "23:00"); //%3A00",
 		formData.append("stop", "23:03"); //%3A03",
 		formData.append("repeat", 0);
@@ -218,18 +219,7 @@ enyo.kind({
 		xhr.send(formData);		
 		*/
 		
-
-		
-		params = {
-			"service_1": 0,
-			"date": "10.01",
-			"start": "23:00", //%3A00",
-			"stop": "23:03", //%3A03",
-			"repeat": 0,
-			"type": 6,
-			"350a7f5ee27d22dbe36698b10930ff96_set_newtimer": "Übernehmen"			
-		};
-		console.log(params);
+		//console.log(params);
 		console.log(formData);
 		var request = new enyo.Ajax({
 			url: SetTimerUrl,
@@ -244,6 +234,7 @@ enyo.kind({
 	processSTResponse2: function(inSender, inEvent) {   
 	    SetTimerUrl = TSAddress + "/index_s.html?" + TSPWMD5 + "_newhddtimer=Neuer+DVR-Timer";
 	    params = {
+		//"tvMode": "1_350a7f5ee27d22dbe36698b10930ff96_set_tvMode_backtonew",
 		"service_1": 0,
 		"date": "20.01",
 		"start": "03:00",
