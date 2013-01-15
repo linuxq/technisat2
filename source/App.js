@@ -2,6 +2,7 @@ TSAddress = ""; //"http://192.168.2.48";
 TSPWMD5 = "";
 TimerID = 0;
 Timers = new Array();
+NewTimer = [];
 enyo.kind({
 	name: "App",
 	kind: "FittableRows",
@@ -19,7 +20,7 @@ enyo.kind({
 					//{content: "3"},
 				]}
 			]},
-			{kind:"onyx.Button", content: "Set Timer", ontap:"buttonSetTimer"},
+			{kind:"onyx.Button", content: "+", ontap:"OpenAddTimerPopup"},
 			{kind: "onyx.Icon", src: "assets/menu-icon-refresh.png", style: "float: right", onclick: "buttonTimers"}
 			//{kind: "onyx.Checkbox", onchange: "checkboxChange"}
 		]},	
@@ -50,13 +51,18 @@ enyo.kind({
 					]}
 				]}
 			]},
-		]},				
+		]},
+			{ tag: "form", name: "myTimerForm", showing: false, action: "http://192.168.2.48/index_s.html?350a7f5ee27d22dbe36698b10930ff96_newhddtimer=Neuer+DVR-Timer", components: [
+				{ tag: "input", type: "hidden", name: "start", value:"23:00"},
+				{ tag: "input", type: "hidden", name: "ende", value:"23:10"}
+			]},
+			
 		{name: "DelTimerConfirmPopup", classes: "onyx-sample-popup", kind: "onyx.Popup", centered: true, modal: true, floating: true, onShow: "popupShown", onHide: "popupHidden", components: [
 				{kind: "onyx.InputDecorator", name: "lblDelTimer", content: "Are you sure?", components: [
 				]},
 				{tag: "br"},
-				{kind: "onyx.Button", content: "No", classes: "onyx-negative", ontap: "delTimerCancel"},
-				{kind: "onyx.Button", content: "Yes", classes: "onyx-affirmative", ontap: "delTimerConfirm"}
+				{kind: "onyx.Button", content: "Yes", classes: "onyx-affirmative", ontap: "delTimerConfirm"},
+				{kind: "onyx.Button", content: "No", classes: "onyx-negative", ontap: "delTimerCancel"}
 		]},
 		{name: "TimerSelPopup", classes: "onyx-sample-popup", kind: "onyx.Popup", centered: true, modal: true, floating: true, onShow: "popupShown", onHide: "popupHidden", components: [
 				{content: "", name:"lbltimerpopup", style: "font-size: 14px"},
@@ -67,6 +73,38 @@ enyo.kind({
 				{tag: "br"},
 				{kind: "onyx.Button", content: "Abbruch", ontap: "SelTimerClosePopup"}
 		]},
+		{name: "NewTimerPopup", classes: "onyx-sample-popup", kind: "onyx.Popup", centered: true, modal: true, floating: true, onShow: "popupShown", onHide: "popupHidden", components: [
+				{kind: "onyx.InputDecorator", content: "Add new timer:", components: [
+				]},
+				{kind: "onyx.PickerDecorator", components: [
+					{kind: "onyx.PickerButton", content: "Channel", style: "width: 220px"},
+					{kind: "onyx.Picker", name:"NewTimerChannel", onSelect: "ChannelSelected", components: [
+						{content: "ARD HD", value: 0, active: true},
+						{content: "ZDF HD", value: 1},
+						{content: "RTL   ", value: 2},
+						{content: "SAT1  ", value: 3}
+					]}
+				]},				
+				{classes: "onyx-toolbar-inline", components: [
+					{name:"NewTimerDate", kind:"onyx.DatePicker"}
+				]},			
+				{name:"NewTimerStart", kind:"onyx.TimePicker", is24HrMode:true},
+				{name:"NewTimerStop", kind:"onyx.TimePicker", is24HrMode:true},
+				{kind: "onyx.PickerDecorator", components: [
+					{},
+					{kind: "onyx.Picker", name:"NewTimerRepeat", onSelect: "RepeatSelected", components: [
+						{content: "once  ", value: 0, active: true},
+						{content: "daily ", value: 1},
+						{content: "weekly", value: 2},
+						{content: "Mo-Fr", value: 3},
+						{content: "Sa-So", value: 4},
+					]}
+				]},				
+				{kind:"onyx.Button", content: "Set Timer", classes: "onyx-affirmative", ontap:"buttonSetTimer"},			
+				//{kind: "onyx.Button", content: "Save", classes: "onyx-negative", ontap: "buttonSetNewTimer"},
+				//{tag: "br"},
+				{kind: "onyx.Button", content: "Abbruch", classes: "onyx-negative", ontap: "buttonCloseNewTimerPopup"}
+		]},		
 		{name: "LoginPopup", classes: "onyx-sample-popup", kind: "onyx.Popup", centered: true, modal: true, floating: true, onShow: "popupShown", onHide: "popupHidden", components: [
 				{kind: "onyx.InputDecorator", components: [
 					{kind: "onyx.Input", placeholder: "IP address", name: "serverAddress", value: "http://192.168.2.48"}
@@ -98,7 +136,10 @@ enyo.kind({
 		{
 			this.$.LoginPopup.show();
 		};
-		this.buttonTimers();			
+		this.buttonTimers();
+		NewTimer = [];
+		NewTimer["channel"] = 0;
+		NewTimer["repeat"] = 0;
 	},
 	resize: function() {
 		console.log("RESIZE!!!!!!");
@@ -124,46 +165,52 @@ enyo.kind({
 		this.$.wsdeltimer.setUrl(TSAddress + "/index_s.html?" + TSPWMD5 + "_deletetimer_" + TimerID + "=L%C3%B6schen");
 		this.$.wsdeltimer.send();		
 		
+	},
+	ChannelSelected: function(inSender, inEvent){
+		help = inEvent.selected;
+		NewTimer["channel"] = help.value;	
+	},
+	RepeatSelected: function(inSender, inEvent){
+		help = inEvent.selected;
+		NewTimer["repeat"] = help.value;
+		console.log(NewTimer.repeat);
 	},	
 	buttonSetTimer: function(inSender) {
+
+		//NewTimer = [];
+
+		//Datum
+		help = this.$.NewTimerDate.getValue();
+		help=help.getDate();
+		NewTimer["date"] =  ( help < 10 ? "0" : "" ) + help;		
+		help = this.$.NewTimerDate.getValue();
+		help=help.getMonth();
+		help++;
+		NewTimer.date= NewTimer.date + "." + ( help < 10 ? "0" : "" ) + help;
+
+		//Start
+		help = this.$.NewTimerStart.getValue();
+		help=help.getHours();
+		NewTimer["start"]= ( help < 10 ? "0" : "" ) + help;
+		help = this.$.NewTimerStart.getValue();
+		help=help.getMinutes();
+		NewTimer["start"]= NewTimer.start + ":" + ( help < 10 ? "0" : "" ) + help;
+		
+		//Stop
+		help = this.$.NewTimerStop.getValue();
+		help=help.getHours();
+		NewTimer["stop"]= ( help < 10 ? "0" : "" ) + help;
+		help = this.$.NewTimerStop.getValue();
+		help=help.getMinutes();
+		NewTimer["stop"]= NewTimer.stop + ":" + ( help < 10 ? "0" : "" ) + help;
+	
+		//Channel
+		//help = this.$.NewTimerChannel.Value();
+		//console.log("Channel: " + help);
+		
 		SetTimerUrl = TSAddress + "/index_s.html?" + TSPWMD5 + "_newhddtimer=Neuer+DVR-Timer";
 		this.$.wssettimer.setUrl(SetTimerUrl);
-		//this.$.wssettimer.setPostBody("") ;
-		this.$.wssettimer.send();			
-		/*var req = new enyo.Ajax({url: SetTimerUrl});
-			req.call({
-			"service_1": 0,
-			"date": "10.01",
-			"start": "23%3A00",
-			"stop": "23%3A03",
-			"repeat": 0,
-			"type": 6,
-			"350a7f5ee27d22dbe36698b10930ff96_set_newtimer": "%C3%9Cbernehmen"			
-		});	*/
-		console.log("1a");
-		
-	/*var request = new enyo.Ajax({
-		url: SetTimerUrl,
-		method: "GET", //You can also use POST
-		handleAs: "text"
-	});*/
-
-			/*service_1: 0,
-			date: "10.01",
-			start: "23%3A00",
-			stop: "23%3A03",
-			repeat: 0,
-			type: 6,
-			"350a7f5ee27d22dbe36698b10930ff96_set_newtimer": "%C3%9Cbernehmen"
-			*/
-	/*console.log("1b");
-	request.response(enyo.bind(this, "processSetTimer")); //tells Ajax what the callback function is
-	console.log("1c");
-	request.go({}); //makes the Ajax call.		-
-	*/
-		
-	
-		
+		this.$.wssettimer.send();		
 	},
 	processDelTimer: function(inSender, inEvent)  {
 		this.$.DelTimerConfirmPopup.show();
@@ -172,13 +219,16 @@ enyo.kind({
 	},
 	processSetTimer: function(inSender, inEvent)  {
 		//console.log("2");
-		console.log("SetTimerSucc:" + inEvent);
+		//console.log("SetTimerSucc:" + inEvent);
 		//this.$.lbldebug.setContent(inEvent);
+		this.buttonTimers();
+		this.$.NewTimerPopup.hide();
 	},
 	processSetTimerError: function(inSender, inEvent)  {
 		//console.log("");
-		console.log("SetTimerError: " + inEvent);
-		this.$.lbldebug.setContent(inEvent);
+		console.log("SetTimerError!");
+		//this.$.lbldebug.setContent(inEvent);
+		this.buttonTimers();
 	},	
 	delTimerCancel: function() {
 		this.$.DelTimerConfirmPopup.hide();
@@ -196,14 +246,9 @@ enyo.kind({
 		this.$.lbldebug.setContent(inEvent.data);//.result[1].countryCode));
 	},
 	processSTResponse: function(inSender, inEvent) {
-		// do something with it
-		//console.log(inEvent.data);
-		//this.$.lbltext.setContent(inEvent.data);//.result[1].countryCode));
-		//SetTimerUrl = TSAddress + "/index_s.html?" + TSPWMD5 + "_set_newtimer=%C3%9Cbernehmen";
-			
-		
 		SetTimerUrl = TSAddress + "/index_s.html?" + TSPWMD5 + "_newhddtimer=Neuer+DVR-Timer";
 		
+		/*
 		var formData = new FormData();
 		formData.append("tvMode", "1_350a7f5ee27d22dbe36698b10930ff96_set_tvMode_backtonew");
 		formData.append("service_1", 0);
@@ -213,46 +258,41 @@ enyo.kind({
 		formData.append("repeat", 0);
 		formData.append("type", 6);
 		formData.append("350a7f5ee27d22dbe36698b10930ff96_set_newtimer", "Übernehmen");
-		
-		/*var xhr = new XMLHttpRequest();
-		xhr.open('POST', SetTimerUrl, true); 
-		xhr.send(formData);		
 		*/
 		
-		//console.log(params);
-		console.log(formData);
+		params = {
+		    //"tvMode": "1_350a7f5ee27d22dbe36698b10930ff96_set_tvMode_backtonew",
+		    "service_1": NewTimer.channel, //0,
+		    "date": NewTimer.date, //"20.01",
+		    "start": NewTimer.start, //"03:00",
+		    "stop": NewTimer.stop, //"03:03",
+		    "repeat": NewTimer.repeat, //0,
+		    "type": 6,
+		    "350a7f5ee27d22dbe36698b10930ff96_set_newtimer": "Übernehmen"                               
+		};
+		
+		/*params = {
+		    //"tvMode": "1_350a7f5ee27d22dbe36698b10930ff96_set_tvMode_backtonew",
+		    "service_1": 0,
+		    "date": "20.01",
+		    "start": "03:00",
+		    "stop": "03:03",
+		    "repeat": 0,
+		    "type": 6,
+		    "350a7f5ee27d22dbe36698b10930ff96_set_newtimer": "Übernehmen"                               
+		};*/		
+	    
+		//console.log(formData);
 		var request = new enyo.Ajax({
 			url: SetTimerUrl,
 			method: "POST",
 			//handleAs: "text",
-			postBody: formData
+			postBody: params //formData
 		});
 		request.response(enyo.bind(this, "processSetTimer"));
 		request.error(this, "processSetTimerError");
 		request.go(); 	
 	},
-	processSTResponse2: function(inSender, inEvent) {   
-	    SetTimerUrl = TSAddress + "/index_s.html?" + TSPWMD5 + "_newhddtimer=Neuer+DVR-Timer";
-	    params = {
-		//"tvMode": "1_350a7f5ee27d22dbe36698b10930ff96_set_tvMode_backtonew",
-		"service_1": 0,
-		"date": "20.01",
-		"start": "03:00",
-		"stop": "03:03",
-		"repeat": 0,
-		"type": 6,
-		"350a7f5ee27d22dbe36698b10930ff96_set_newtimer": "Übernehmen"                               
-	    };
-	    var request = new enyo.Ajax({
-		    url: SetTimerUrl,
-		    //handleAs: "text",
-		    method: "POST"
-	    });
-	    request.response(this, "processSetTimer");
-	    request.error(this, "processSetTimerError");
-	    request.go(params);
-	},
-	
 	processTimers: function(inSender, inEvent) {
 		//console.log(inEvent.data);
 		//this.$.lbltext.setContent(inEvent.data);//.result[1].countryCode));
@@ -341,6 +381,7 @@ enyo.kind({
 			this.$.LoginPopup.show();
 			break;
 		case 'Add new timer':
+			this.$.NewTimerPopup.show();
 			break;
 		}			
 		//console.log(inEvent.content);
@@ -357,5 +398,15 @@ enyo.kind({
 		localStorage.setItem("tspwmd5", TSPWMD5);
 		this.buttonTimers();		
 		this.$.LoginPopup.hide();
-	},	
+	},
+	buttonCloseNewTimerPopup: function(inSender, inEvent){
+		this.$.NewTimerPopup.hide();
+	},
+	buttonSetNewTimer: function(inSender, inEvent){
+		this.$.NewTimerPopup.hide();
+		this.buttonSetTimer();
+	},
+	OpenAddTimerPopup: function(inSender, inEvent){
+		this.$.NewTimerPopup.show();		
+	}
 });

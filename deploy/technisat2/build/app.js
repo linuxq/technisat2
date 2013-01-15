@@ -4452,7 +4452,7 @@ this.setShowing(!1);
 
 // App.js
 
-TSAddress = "", TSPWMD5 = "", TimerID = 0, Timers = new Array, enyo.kind({
+TSAddress = "", TSPWMD5 = "", TimerID = 0, Timers = new Array, NewTimer = [], enyo.kind({
 name: "App",
 kind: "FittableRows",
 classes: "onyx enyo-fit",
@@ -4477,8 +4477,8 @@ content: "Add new timer"
 } ]
 }, {
 kind: "onyx.Button",
-content: "Set Timer",
-ontap: "buttonSetTimer"
+content: "+",
+ontap: "OpenAddTimerPopup"
 }, {
 kind: "onyx.Icon",
 src: "assets/menu-icon-refresh.png",
@@ -4532,6 +4532,22 @@ style: "float: right; color: lightgrey;"
 } ]
 } ]
 }, {
+tag: "form",
+name: "myTimerForm",
+showing: !1,
+action: "http://192.168.2.48/index_s.html?350a7f5ee27d22dbe36698b10930ff96_newhddtimer=Neuer+DVR-Timer",
+components: [ {
+tag: "input",
+type: "hidden",
+name: "start",
+value: "23:00"
+}, {
+tag: "input",
+type: "hidden",
+name: "ende",
+value: "23:10"
+} ]
+}, {
 name: "DelTimerConfirmPopup",
 classes: "onyx-sample-popup",
 kind: "onyx.Popup",
@@ -4549,14 +4565,14 @@ components: []
 tag: "br"
 }, {
 kind: "onyx.Button",
-content: "No",
-classes: "onyx-negative",
-ontap: "delTimerCancel"
-}, {
-kind: "onyx.Button",
 content: "Yes",
 classes: "onyx-affirmative",
 ontap: "delTimerConfirm"
+}, {
+kind: "onyx.Button",
+content: "No",
+classes: "onyx-negative",
+ontap: "delTimerCancel"
 } ]
 }, {
 name: "TimerSelPopup",
@@ -4593,6 +4609,93 @@ tag: "br"
 kind: "onyx.Button",
 content: "Abbruch",
 ontap: "SelTimerClosePopup"
+} ]
+}, {
+name: "NewTimerPopup",
+classes: "onyx-sample-popup",
+kind: "onyx.Popup",
+centered: !0,
+modal: !0,
+floating: !0,
+onShow: "popupShown",
+onHide: "popupHidden",
+components: [ {
+kind: "onyx.InputDecorator",
+content: "Add new timer:",
+components: []
+}, {
+kind: "onyx.PickerDecorator",
+components: [ {
+kind: "onyx.PickerButton",
+content: "Channel",
+style: "width: 220px"
+}, {
+kind: "onyx.Picker",
+name: "NewTimerChannel",
+onSelect: "ChannelSelected",
+components: [ {
+content: "ARD HD",
+value: 0,
+active: !0
+}, {
+content: "ZDF HD",
+value: 1
+}, {
+content: "RTL   ",
+value: 2
+}, {
+content: "SAT1  ",
+value: 3
+} ]
+} ]
+}, {
+classes: "onyx-toolbar-inline",
+components: [ {
+name: "NewTimerDate",
+kind: "onyx.DatePicker"
+} ]
+}, {
+name: "NewTimerStart",
+kind: "onyx.TimePicker",
+is24HrMode: !0
+}, {
+name: "NewTimerStop",
+kind: "onyx.TimePicker",
+is24HrMode: !0
+}, {
+kind: "onyx.PickerDecorator",
+components: [ {}, {
+kind: "onyx.Picker",
+name: "NewTimerRepeat",
+onSelect: "RepeatSelected",
+components: [ {
+content: "once  ",
+value: 0,
+active: !0
+}, {
+content: "daily ",
+value: 1
+}, {
+content: "weekly",
+value: 2
+}, {
+content: "Mo-Fr",
+value: 3
+}, {
+content: "Sa-So",
+value: 4
+} ]
+} ]
+}, {
+kind: "onyx.Button",
+content: "Set Timer",
+classes: "onyx-affirmative",
+ontap: "buttonSetTimer"
+}, {
+kind: "onyx.Button",
+content: "Abbruch",
+classes: "onyx-negative",
+ontap: "buttonCloseNewTimerPopup"
 } ]
 }, {
 name: "LoginPopup",
@@ -4658,14 +4761,14 @@ callbackName: "callback"
 kind: "WebService",
 name: "wssettimer",
 url: "",
-onResponse: "processSTResponse2",
+onResponse: "processSTResponse",
 callbackName: "callback"
 } ],
 rendered: function(e, t) {
 this.inherited(arguments), window.setTimeout(this.startapp(), 1), this.resize();
 },
 startapp: function(e, t) {
-TSAddress = localStorage.getItem("tsaddress"), TSPWMD5 = localStorage.getItem("tspwmd5"), console.log("geladen:" + TSAddress + " - " + TSPWMD5), TSPWMD5 == null && this.$.LoginPopup.show(), this.buttonTimers();
+TSAddress = localStorage.getItem("tsaddress"), TSPWMD5 = localStorage.getItem("tspwmd5"), console.log("geladen:" + TSAddress + " - " + TSPWMD5), TSPWMD5 == null && this.$.LoginPopup.show(), this.buttonTimers(), NewTimer = [], NewTimer.channel = 0, NewTimer.repeat = 0;
 },
 resize: function() {
 console.log("RESIZE!!!!!!"), this.reflow(), this.$.scroller.reflow(), this.$.repeater.reflow();
@@ -4682,17 +4785,23 @@ this.$.wstimers.setUrl(TSAddress + "/index_s.html?" + TSPWMD5 + "_timeroverview=
 buttonDelTimer: function(e) {
 this.$.wsdeltimer.setUrl(TSAddress + "/index_s.html?" + TSPWMD5 + "_deletetimer_" + TimerID + "=L%C3%B6schen"), this.$.wsdeltimer.send();
 },
+ChannelSelected: function(e, t) {
+help = t.selected, NewTimer.channel = help.value;
+},
+RepeatSelected: function(e, t) {
+help = t.selected, NewTimer.repeat = help.value, console.log(NewTimer.repeat);
+},
 buttonSetTimer: function(e) {
-SetTimerUrl = TSAddress + "/index_s.html?" + TSPWMD5 + "_newhddtimer=Neuer+DVR-Timer", this.$.wssettimer.setUrl(SetTimerUrl), this.$.wssettimer.send(), console.log("1a");
+help = this.$.NewTimerDate.getValue(), help = help.getDate(), NewTimer.date = (help < 10 ? "0" : "") + help, help = this.$.NewTimerDate.getValue(), help = help.getMonth(), help++, NewTimer.date = NewTimer.date + "." + (help < 10 ? "0" : "") + help, help = this.$.NewTimerStart.getValue(), help = help.getHours(), NewTimer.start = (help < 10 ? "0" : "") + help, help = this.$.NewTimerStart.getValue(), help = help.getMinutes(), NewTimer.start = NewTimer.start + ":" + (help < 10 ? "0" : "") + help, help = this.$.NewTimerStop.getValue(), help = help.getHours(), NewTimer.stop = (help < 10 ? "0" : "") + help, help = this.$.NewTimerStop.getValue(), help = help.getMinutes(), NewTimer.stop = NewTimer.stop + ":" + (help < 10 ? "0" : "") + help, SetTimerUrl = TSAddress + "/index_s.html?" + TSPWMD5 + "_newhddtimer=Neuer+DVR-Timer", this.$.wssettimer.setUrl(SetTimerUrl), this.$.wssettimer.send();
 },
 processDelTimer: function(e, t) {
 this.$.DelTimerConfirmPopup.show(), helper = TimerID + 1;
 },
 processSetTimer: function(e, t) {
-console.log("SetTimerSucc:" + t), this.$.lbldebug.setContent(t);
+this.buttonTimers(), this.$.NewTimerPopup.hide();
 },
 processSetTimerError: function(e, t) {
-console.log("SetTimerError: " + t), this.$.lbldebug.setContent(t);
+console.log("SetTimerError!"), this.buttonTimers();
 },
 delTimerCancel: function() {
 this.$.DelTimerConfirmPopup.hide();
@@ -4704,39 +4813,21 @@ processLogin: function(e, t) {
 this.$.lbldebug.setContent(t.data);
 },
 processSTResponse: function(e, t) {
-SetTimerUrl = TSAddress + "/index_s.html?" + TSPWMD5 + "_newhddtimer=Neuer+DVR-Timer";
-var n = new FormData;
-n.append("service_1", 0), n.append("date", "11.01"), n.append("start", "23:00"), n.append("stop", "23:03"), n.append("repeat", 0), n.append("type", 6), n.append("350a7f5ee27d22dbe36698b10930ff96_set_newtimer", "\u00dcbernehmen"), params = {
-service_1: 0,
-date: "10.01",
-start: "23:00",
-stop: "23:03",
-repeat: 0,
-type: 6,
-"350a7f5ee27d22dbe36698b10930ff96_set_newtimer": "\u00dcbernehmen"
-}, console.log(params), console.log(n);
-var r = new enyo.Ajax({
-url: SetTimerUrl,
-method: "POST",
-postBody: n
-});
-r.response(enyo.bind(this, "processSetTimer")), r.error(this, "processSetTimerError"), r.go();
-},
-processSTResponse2: function(e, t) {
 SetTimerUrl = TSAddress + "/index_s.html?" + TSPWMD5 + "_newhddtimer=Neuer+DVR-Timer", params = {
-service_1: 0,
-date: "20.01",
-start: "03:00",
-stop: "03:03",
-repeat: 0,
+service_1: NewTimer.channel,
+date: NewTimer.date,
+start: NewTimer.start,
+stop: NewTimer.stop,
+repeat: NewTimer.repeat,
 type: 6,
 "350a7f5ee27d22dbe36698b10930ff96_set_newtimer": "\u00dcbernehmen"
 };
 var n = new enyo.Ajax({
 url: SetTimerUrl,
-method: "POST"
+method: "POST",
+postBody: params
 });
-n.response(this, "processSetTimer"), n.error(this, "processSetTimerError"), n.go(params);
+n.response(enyo.bind(this, "processSetTimer")), n.error(this, "processSetTimerError"), n.go();
 },
 processTimers: function(e, t) {
 Timers = [], helper = t.data;
@@ -4779,6 +4870,7 @@ case "Receiver setup":
 this.$.LoginPopup.show();
 break;
 case "Add new timer":
+this.$.NewTimerPopup.show();
 }
 },
 LoginClose: function(e, t) {
@@ -4786,6 +4878,15 @@ this.$.LoginPopup.hide();
 },
 LoginSave: function(e, t) {
 TSPWMD5 = MD5(this.$.serverPW.getValue()), TSAddress = this.$.serverAddress.getValue(), localStorage.setItem("tsaddress", TSAddress), localStorage.setItem("tspwmd5", TSPWMD5), this.buttonTimers(), this.$.LoginPopup.hide();
+},
+buttonCloseNewTimerPopup: function(e, t) {
+this.$.NewTimerPopup.hide();
+},
+buttonSetNewTimer: function(e, t) {
+this.$.NewTimerPopup.hide(), this.buttonSetTimer();
+},
+OpenAddTimerPopup: function(e, t) {
+this.$.NewTimerPopup.show();
 }
 });
 
