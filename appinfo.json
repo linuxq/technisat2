@@ -5,6 +5,6 @@
 	"type": "web",
 	"main": "index.html",
 	"title": "Technisat",
-	"icon": "icon.png",
+	"icon": "icon48.png",
 	"uiRevision":2
 }

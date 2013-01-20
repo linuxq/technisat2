@@ -3,7 +3,7 @@ TSPWMD5 = "";
 TimerID = 0;
 Timers = new Array();
 NewTimer = [];
-
+channelList = new Array();
 enyo.kind({
   name: "Channel",
   kind: "onyx.MenuItem",
@@ -105,7 +105,7 @@ enyo.kind({
 				{kind: "onyx.Button", content: "Abbruch", ontap: "SelTimerClosePopup"}
 		]},
 		{name: "NewTimerPopup", classes: "onyx-sample-popup", kind: "onyx.Popup", centered: true, modal: true, floating: true, onShow: "popupShown", onHide: "popupHidden", components: [
-				{kind: "onyx.InputDecorator", content: "Add new timer:", components: [
+				/*{kind: "onyx.InputDecorator", content: "Add new timer:", components: [
 				]},
 				{kind: "onyx.PickerDecorator", components: [
 					{kind: "onyx.PickerButton", content: "Channel", style: "width: 220px"},
@@ -115,18 +115,20 @@ enyo.kind({
 						{content: "RTL   ", value: 2},
 						{content: "SAT1  ", value: 3}
 					]}
-				]},				
+				]},*/
+				{classes: "onyx-sample-divider", content: "Channel"},				
 				{
 				    kind: "onyx.PickerDecorator",
 				    components: [{
-						style: "min-width: 150px;"
+						style: "width: 300px;"
 					}, 
 					{
 					      kind: "onyx.FlyweightPicker",
 					      name: "NewTimerChannel2",
 					      onSetupItem: "setupChannelSelect",
-					      onSelect: "ChannelSelected2",
+					      onSelect: "ChannelSelected",
 					      count: 1,
+					      style: "text-align: left",
 					      components: [{
 						kind: "Channel",
 						name: "channelSelect",
@@ -136,25 +138,47 @@ enyo.kind({
 					      }]
 					}
 				]},
-				{classes: "onyx-toolbar-inline", components: [
-					{name:"NewTimerDate", kind:"onyx.DatePicker"}
-				]},			
-				{name:"NewTimerStart", kind:"onyx.TimePicker", is24HrMode:true},
-				{name:"NewTimerStop", kind:"onyx.TimePicker", is24HrMode:true},
-				{kind: "onyx.PickerDecorator", components: [
-					{},
-					{kind: "onyx.Picker", name:"NewTimerRepeat", onSelect: "RepeatSelected", components: [
-						{content: "once  ", value: 0, active: true},
-						{content: "daily ", value: 1},
-						{content: "weekly", value: 2},
-						{content: "Mo-Fr", value: 3},
-						{content: "Sa-So", value: 4},
+
+				{kind: "FittableColumns", fit: true, classes: "fittable-sample-mtb fittable-sample-o", components: [
+					{classes: "onyx-sample-divider", fit: true, content: "Date"},				
+					{classes: "onyx-toolbar-inline", components: [
+						{name:"NewTimerDate", kind:"onyx.DatePicker"}
+					]}
+				]},
+				
+				{kind: "FittableColumns", fit: true, classes: "fittable-sample-mtb fittable-sample-o", components: [
+					{classes: "onyx-sample-divider", content: "Start"},
+					{content: "", fit: true, classes: "fittable-sample-mlr fittable-sample-o"},
+					{name:"NewTimerStart", kind:"onyx.TimePicker", is24HrMode:true}
+				]},							
+				{kind: "FittableColumns", fit: true, classes: "fittable-sample-mtb fittable-sample-o", components: [
+					{classes: "onyx-sample-divider", content: "Stop"},
+					{content: "", fit: true, classes: "fittable-sample-mlr fittable-sample-o"},
+					{name:"NewTimerStop", kind:"onyx.TimePicker", is24HrMode:true}
+				]},				
+				{kind: "FittableColumns", fit: true, classes: "fittable-sample-mtb fittable-sample-o", components: [
+					{classes: "onyx-sample-divider", fit: true, content: "Type"},
+					//{content: "", fit: true, classes: "fittable-sample-mlr fittable-sample-o"},
+					{kind: "onyx.PickerDecorator",  components: [
+						{},
+						{kind: "onyx.Picker", name:"NewTimerRepeat", onSelect: "RepeatSelected", components: [
+							{content: "once  ", value: 0, active: true},
+							{content: "daily ", value: 1},
+							{content: "weekly", value: 2},
+							{content: "Mo-Fr", value: 3},
+							{content: "Sa-So", value: 4},
+						]}
 					]}
 				]},				
-				{kind:"onyx.Button", content: "Set Timer", classes: "onyx-affirmative", ontap:"buttonSetTimer"},			
-				//{kind: "onyx.Button", content: "Save", classes: "onyx-negative", ontap: "buttonSetNewTimer"},
-				//{tag: "br"},
-				{kind: "onyx.Button", content: "Abbruch", classes: "onyx-negative", ontap: "buttonCloseNewTimerPopup"}
+				{classes: "onyx-sample-divider", content: " "},
+
+				{kind: "FittableColumns", fit: true, classes: "fittable-sample-mtb fittable-sample-o", components: [
+					{kind:"onyx.Button", content: "Set Timer", classes: "onyx-affirmative", ontap:"buttonSetTimer"},			
+					//{kind: "onyx.Button", content: "Save", classes: "onyx-negative", ontap: "buttonSetNewTimer"},
+					//{tag: "br"},
+					{content: "", fit: true, classes: "fittable-sample-mlr fittable-sample-o"},
+					{kind: "onyx.Button", content: "Abbruch", classes: "onyx-negative", ontap: "buttonCloseNewTimerPopup"}
+				]},				
 		]},		
 		{name: "LoginPopup", classes: "onyx-sample-popup", kind: "onyx.Popup", centered: true, modal: true, floating: true, onShow: "popupShown", onHide: "popupHidden", components: [
 				{kind: "onyx.InputDecorator", components: [
@@ -172,39 +196,33 @@ enyo.kind({
 		{kind: "WebService", name:"wsdeltimer", url: "", onResponse:"processDelTimer", callbackName: "callback"},
 		{kind: "WebService", name:"wsdeltimerconfirm", url: "", onResponse:"", callbackName: "callback"},
 		{kind: "WebService", name:"wssettimer", url: "", onResponse:"processSTResponse", callbackName: "callback"},
+		{kind: "WebService", name:"wsgetchannels", url: "", onResponse:"GetChannelsResponse", callbackName: "callback"},			
 	],
 	rendered: function(inSender, inEvent) {
 		this.inherited(arguments);
 		window.setTimeout(this.startapp(), 1);
-		this.$.NewTimerChannel2.setCount(this.channelList.length);		
+		//this.$.NewTimerChannel2.setCount(this.channelList.length);		
 		this.resize();		
 	},
 	create : function () {
 		this.inherited(arguments);
-		this.ChannelList = new Array();
-		this.ChannelList[0] = new Object();
-		this.ChannelList[0]["content"] = "ARD HD";
-		this.ChannelList[0]["value"] = 0;
-		this.ChannelList[1] = new Object();
-		this.ChannelList[1]["content"] = "ZDF HD";
-		this.ChannelList[1]["value"] = 1;
-		this.ChannelList[2] = new Object();
-		this.ChannelList[2]["content"] = "RTL";
-		this.ChannelList[2]["value"] = 2;		
-		//this.setupChannelSelect(this.channelList);
-		this.channelList = new Array("ARD HD", "ZDF HD", "RTL", "SAT2");
-		console.log("CREATE: " + this.channelList);
 		//this.$.channel.setContent(this.ChannelList);
 	},	
-	startapp: function(inSender,inEvent){
-		//console.log("StartAPP");
+	startapp: function(inSender,inEvent){		
+		//console.log("StartAPP");		
 		TSAddress = localStorage.getItem("tsaddress");
 		TSPWMD5 = localStorage.getItem("tspwmd5");
 		console.log("geladen:" + TSAddress + " - " + TSPWMD5);
 		if (TSPWMD5 == null)
 		{
 			this.$.LoginPopup.show();
-		};
+		} else
+		{
+			//Kanalliste laden
+			SetTimerUrl = TSAddress + "/index_s.html?" + TSPWMD5 + "_newhddtimer=Neuer+DVR-Timer";
+			this.$.wsgetchannels.setUrl(SetTimerUrl);
+			this.$.wsgetchannels.send();			
+		}
 		this.buttonTimers();
 		NewTimer = [];
 		NewTimer["channel"] = 0;
@@ -244,8 +262,10 @@ enyo.kind({
 		
 	},
 	ChannelSelected: function(inSender, inEvent){
-		help = inEvent.selected;
-		NewTimer["channel"] = help.value;	
+		//enyo.log(inEvent.selected.getValue());
+		//enyo.log(inEvent.selected.getContent());		
+		//help = inEvent.selected;
+		NewTimer["channel"] = inEvent.selected.getValue();	
 	},
 	RepeatSelected: function(inSender, inEvent){
 		help = inEvent.selected;
@@ -320,10 +340,15 @@ enyo.kind({
 	processLogin: function(inSender, inEvent) {
 		// do something with it
 		//console.log(inEvent.data);
+		//Kanäle einselen
+		//console.log("LOGIN**********");
+		SetTimerUrl = TSAddress + "/index_s.html?" + TSPWMD5 + "_newhddtimer=Neuer+DVR-Timer";
+		this.$.wsgetchannels.setUrl(SetTimerUrl);
+		this.$.wsgetchannels.send();		
 		this.$.lbldebug.setContent(inEvent.data);//.result[1].countryCode));
 	},
 	processSTResponse: function(inSender, inEvent) {
-		this.getChannels(inEvent.data);
+		//this.getChannels(inEvent.data);
 		SetTimerUrl = TSAddress + "/index_s.html?" + TSPWMD5 + "_newhddtimer=Neuer+DVR-Timer";
 		params = {
 		    //"tvMode": "1_350a7f5ee27d22dbe36698b10930ff96_set_tvMode_backtonew",
@@ -345,8 +370,9 @@ enyo.kind({
 		request.error(this, "processSetTimerError");
 		request.go(); 	
 	},
-	getChannels: function(helper){
+	GetChannelsResponse: function(inSender, inEvent){
 		this.channelList = [];
+		helper = inEvent.data;
 		//Tabelle suchen
 		var strlength = helper.length;
 		var Pos = helper.indexOf("service_1", 0); //
@@ -365,8 +391,8 @@ enyo.kind({
 						//this.channelList[i] = helper.substring(Pos + 7 , Pos2);
 						Pos3  = helper.indexOf(">", Pos + 1);
 						Pos4  = helper.indexOf("<", Pos + 1);
-						console.log("Found " + helper.substring(Pos3 + 1, Pos4)+"*");
-						this.channelList[i] = helper.substring(Pos3 + 1, Pos4);
+						//console.log("Found " + helper.substring(Pos3 + 1, Pos4)+"*");
+						this.channelList[i] = helper.substring(Pos3 + 5, Pos4);
 					}
 					i++;
 				}
@@ -477,7 +503,11 @@ enyo.kind({
 		//console.log("Neues Login: " + TSAddress + " - " + TSPWMD5);
 		localStorage.setItem("tsaddress", TSAddress);
 		localStorage.setItem("tspwmd5", TSPWMD5);
-		this.buttonTimers();		
+		this.buttonTimers();
+		//Kanalliste laden
+		SetTimerUrl = TSAddress + "/index_s.html?" + TSPWMD5 + "_newhddtimer=Neuer+DVR-Timer";
+		this.$.wsgetchannels.setUrl(SetTimerUrl);
+		this.$.wsgetchannels.send();		
 		this.$.LoginPopup.hide();
 	},
 	buttonCloseNewTimerPopup: function(inSender, inEvent){

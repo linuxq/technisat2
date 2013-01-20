@@ -4452,7 +4452,13 @@ this.setShowing(!1);
 
 // App.js
 
-TSAddress = "", TSPWMD5 = "", TimerID = 0, Timers = new Array, NewTimer = [], enyo.kind({
+TSAddress = "", TSPWMD5 = "", TimerID = 0, Timers = new Array, NewTimer = [], channelList = new Array, enyo.kind({
+name: "Channel",
+kind: "onyx.MenuItem",
+published: {
+value: 0
+}
+}), enyo.kind({
 name: "App",
 kind: "FittableRows",
 classes: "onyx enyo-fit",
@@ -4620,48 +4626,82 @@ floating: !0,
 onShow: "popupShown",
 onHide: "popupHidden",
 components: [ {
-kind: "onyx.InputDecorator",
-content: "Add new timer:",
-components: []
+classes: "onyx-sample-divider",
+content: "Channel"
 }, {
 kind: "onyx.PickerDecorator",
 components: [ {
-kind: "onyx.PickerButton",
-content: "Channel",
-style: "width: 220px"
+style: "width: 300px;"
 }, {
-kind: "onyx.Picker",
-name: "NewTimerChannel",
+kind: "onyx.FlyweightPicker",
+name: "NewTimerChannel2",
+onSetupItem: "setupChannelSelect",
 onSelect: "ChannelSelected",
+count: 1,
+style: "text-align: left",
 components: [ {
-content: "ARD HD",
+kind: "Channel",
+name: "channelSelect",
+content: "Test",
 value: 0,
 active: !0
-}, {
-content: "ZDF HD",
-value: 1
-}, {
-content: "RTL   ",
-value: 2
-}, {
-content: "SAT1  ",
-value: 3
 } ]
 } ]
+}, {
+kind: "FittableColumns",
+fit: !0,
+classes: "fittable-sample-mtb fittable-sample-o",
+components: [ {
+classes: "onyx-sample-divider",
+fit: !0,
+content: "Date"
 }, {
 classes: "onyx-toolbar-inline",
 components: [ {
 name: "NewTimerDate",
 kind: "onyx.DatePicker"
 } ]
+} ]
+}, {
+kind: "FittableColumns",
+fit: !0,
+classes: "fittable-sample-mtb fittable-sample-o",
+components: [ {
+classes: "onyx-sample-divider",
+content: "Start"
+}, {
+content: "",
+fit: !0,
+classes: "fittable-sample-mlr fittable-sample-o"
 }, {
 name: "NewTimerStart",
 kind: "onyx.TimePicker",
 is24HrMode: !0
+} ]
+}, {
+kind: "FittableColumns",
+fit: !0,
+classes: "fittable-sample-mtb fittable-sample-o",
+components: [ {
+classes: "onyx-sample-divider",
+content: "Stop"
+}, {
+content: "",
+fit: !0,
+classes: "fittable-sample-mlr fittable-sample-o"
 }, {
 name: "NewTimerStop",
 kind: "onyx.TimePicker",
 is24HrMode: !0
+} ]
+}, {
+kind: "FittableColumns",
+fit: !0,
+classes: "fittable-sample-mtb fittable-sample-o",
+components: [ {
+classes: "onyx-sample-divider",
+fit: !0,
+content: "Type"
 }, {
 kind: "onyx.PickerDecorator",
 components: [ {}, {
@@ -4686,16 +4726,29 @@ content: "Sa-So",
 value: 4
 } ]
 } ]
+} ]
 }, {
+classes: "onyx-sample-divider",
+content: " "
+}, {
+kind: "FittableColumns",
+fit: !0,
+classes: "fittable-sample-mtb fittable-sample-o",
+components: [ {
 kind: "onyx.Button",
 content: "Set Timer",
 classes: "onyx-affirmative",
 ontap: "buttonSetTimer"
 }, {
+content: "",
+fit: !0,
+classes: "fittable-sample-mlr fittable-sample-o"
+}, {
 kind: "onyx.Button",
 content: "Abbruch",
 classes: "onyx-negative",
 ontap: "buttonCloseNewTimerPopup"
+} ]
 } ]
 }, {
 name: "LoginPopup",
@@ -4763,12 +4816,27 @@ name: "wssettimer",
 url: "",
 onResponse: "processSTResponse",
 callbackName: "callback"
+}, {
+kind: "WebService",
+name: "wsgetchannels",
+url: "",
+onResponse: "GetChannelsResponse",
+callbackName: "callback"
 } ],
 rendered: function(e, t) {
 this.inherited(arguments), window.setTimeout(this.startapp(), 1), this.resize();
 },
+create: function() {
+this.inherited(arguments);
+},
 startapp: function(e, t) {
-TSAddress = localStorage.getItem("tsaddress"), TSPWMD5 = localStorage.getItem("tspwmd5"), console.log("geladen:" + TSAddress + " - " + TSPWMD5), TSPWMD5 == null && this.$.LoginPopup.show(), this.buttonTimers(), NewTimer = [], NewTimer.channel = 0, NewTimer.repeat = 0;
+TSAddress = localStorage.getItem("tsaddress"), TSPWMD5 = localStorage.getItem("tspwmd5"), console.log("geladen:" + TSAddress + " - " + TSPWMD5), TSPWMD5 == null ? this.$.LoginPopup.show() : (SetTimerUrl = TSAddress + "/index_s.html?" + TSPWMD5 + "_newhddtimer=Neuer+DVR-Timer", this.$.wsgetchannels.setUrl(SetTimerUrl), this.$.wsgetchannels.send()), this.buttonTimers(), NewTimer = [], NewTimer.channel = 0, NewTimer.repeat = 0;
+},
+setupChannelSelect: function(e, t) {
+this.$.channelSelect.setContent(this.channelList[t.index]), this.$.channelSelect.setValue(t.index);
+},
+ChannelSelected2: function(e, t) {
+enyo.log(t.selected.getValue()), enyo.log(t.selected.getContent());
 },
 resize: function() {
 console.log("RESIZE!!!!!!"), this.reflow(), this.$.scroller.reflow(), this.$.repeater.reflow();
@@ -4786,7 +4854,7 @@ buttonDelTimer: function(e) {
 this.$.wsdeltimer.setUrl(TSAddress + "/index_s.html?" + TSPWMD5 + "_deletetimer_" + TimerID + "=L%C3%B6schen"), this.$.wsdeltimer.send();
 },
 ChannelSelected: function(e, t) {
-help = t.selected, NewTimer.channel = help.value;
+NewTimer.channel = t.selected.getValue();
 },
 RepeatSelected: function(e, t) {
 help = t.selected, NewTimer.repeat = help.value, console.log(NewTimer.repeat);
@@ -4810,7 +4878,7 @@ delTimerConfirm: function() {
 console.log("Timer gel\u00f6scht"), this.$.wsdeltimerconfirm.setUrl(TSAddress + "/index_s.html?" + TSPWMD5 + "_confirmdelete=Ja"), this.$.wsdeltimerconfirm.send(), this.$.DelTimerConfirmPopup.hide(), this.buttonTimers();
 },
 processLogin: function(e, t) {
-this.$.lbldebug.setContent(t.data);
+SetTimerUrl = TSAddress + "/index_s.html?" + TSPWMD5 + "_newhddtimer=Neuer+DVR-Timer", this.$.wsgetchannels.setUrl(SetTimerUrl), this.$.wsgetchannels.send(), this.$.lbldebug.setContent(t.data);
 },
 processSTResponse: function(e, t) {
 SetTimerUrl = TSAddress + "/index_s.html?" + TSPWMD5 + "_newhddtimer=Neuer+DVR-Timer", params = {
@@ -4828,6 +4896,20 @@ method: "POST",
 postBody: params
 });
 n.response(enyo.bind(this, "processSetTimer")), n.error(this, "processSetTimerError"), n.go();
+},
+GetChannelsResponse: function(e, t) {
+this.channelList = [], helper = t.data;
+var n = helper.length, r = helper.indexOf("service_1", 0);
+PosEndeList = helper.indexOf("</select>", r);
+var i = 0;
+while (r >= 0) {
+r = helper.indexOf("value='", r + 2);
+if (r >= 0) {
+var s = helper.indexOf("'", r + 7);
+r >= PosEndeList ? r = -1 : (Pos3 = helper.indexOf(">", r + 1), Pos4 = helper.indexOf("<", r + 1), this.channelList[i] = helper.substring(Pos3 + 5, Pos4)), i++;
+}
+}
+this.$.NewTimerChannel2.setCount(this.channelList.length);
 },
 processTimers: function(e, t) {
 Timers = [], helper = t.data;
@@ -4877,7 +4959,7 @@ LoginClose: function(e, t) {
 this.$.LoginPopup.hide();
 },
 LoginSave: function(e, t) {
-TSPWMD5 = MD5(this.$.serverPW.getValue()), TSAddress = this.$.serverAddress.getValue(), localStorage.setItem("tsaddress", TSAddress), localStorage.setItem("tspwmd5", TSPWMD5), this.buttonTimers(), this.$.LoginPopup.hide();
+TSPWMD5 = MD5(this.$.serverPW.getValue()), TSAddress = this.$.serverAddress.getValue(), localStorage.setItem("tsaddress", TSAddress), localStorage.setItem("tspwmd5", TSPWMD5), this.buttonTimers(), SetTimerUrl = TSAddress + "/index_s.html?" + TSPWMD5 + "_newhddtimer=Neuer+DVR-Timer", this.$.wsgetchannels.setUrl(SetTimerUrl), this.$.wsgetchannels.send(), this.$.LoginPopup.hide();
 },
 buttonCloseNewTimerPopup: function(e, t) {
 this.$.NewTimerPopup.hide();
