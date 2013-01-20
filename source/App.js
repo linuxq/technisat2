@@ -3,6 +3,15 @@ TSPWMD5 = "";
 TimerID = 0;
 Timers = new Array();
 NewTimer = [];
+
+enyo.kind({
+  name: "Channel",
+  kind: "onyx.MenuItem",
+  published: {
+    value: 0
+  }
+});
+
 enyo.kind({
 	name: "App",
 	kind: "FittableRows",
@@ -21,6 +30,28 @@ enyo.kind({
 				]}
 			]},
 			{kind:"onyx.Button", content: "+", ontap:"OpenAddTimerPopup"},
+			/*{
+				kind : "onyx.PickerDecorator",
+				components : [{
+						kind : "onyx.PickerButton",
+						content : "Channel",
+						style : "width: 220px"
+					}, {
+						kind : "onyx.Picker",
+						name : "NewTimerChannel2",
+						onSelect : "ChannelSelected",
+						onSetupItem : "setupChannelSelect",
+						components : [{
+								name : "channel",
+								content : "Auswählen"
+							}
+						]
+					}
+				]
+			},
+			*/
+
+			
 			{kind: "onyx.Icon", src: "assets/menu-icon-refresh.png", style: "float: right", onclick: "buttonTimers"}
 			//{kind: "onyx.Checkbox", onchange: "checkboxChange"}
 		]},	
@@ -85,6 +116,26 @@ enyo.kind({
 						{content: "SAT1  ", value: 3}
 					]}
 				]},				
+				{
+				    kind: "onyx.PickerDecorator",
+				    components: [{
+						style: "min-width: 150px;"
+					}, 
+					{
+					      kind: "onyx.FlyweightPicker",
+					      name: "NewTimerChannel2",
+					      onSetupItem: "setupChannelSelect",
+					      onSelect: "ChannelSelected2",
+					      count: 1,
+					      components: [{
+						kind: "Channel",
+						name: "channelSelect",
+						content: "Test",
+						value: 0,
+						active: true
+					      }]
+					}
+				]},
 				{classes: "onyx-toolbar-inline", components: [
 					{name:"NewTimerDate", kind:"onyx.DatePicker"}
 				]},			
@@ -125,8 +176,26 @@ enyo.kind({
 	rendered: function(inSender, inEvent) {
 		this.inherited(arguments);
 		window.setTimeout(this.startapp(), 1);
+		this.$.NewTimerChannel2.setCount(this.channelList.length);		
 		this.resize();		
 	},
+	create : function () {
+		this.inherited(arguments);
+		this.ChannelList = new Array();
+		this.ChannelList[0] = new Object();
+		this.ChannelList[0]["content"] = "ARD HD";
+		this.ChannelList[0]["value"] = 0;
+		this.ChannelList[1] = new Object();
+		this.ChannelList[1]["content"] = "ZDF HD";
+		this.ChannelList[1]["value"] = 1;
+		this.ChannelList[2] = new Object();
+		this.ChannelList[2]["content"] = "RTL";
+		this.ChannelList[2]["value"] = 2;		
+		//this.setupChannelSelect(this.channelList);
+		this.channelList = new Array("ARD HD", "ZDF HD", "RTL", "SAT2");
+		console.log("CREATE: " + this.channelList);
+		//this.$.channel.setContent(this.ChannelList);
+	},	
 	startapp: function(inSender,inEvent){
 		//console.log("StartAPP");
 		TSAddress = localStorage.getItem("tsaddress");
@@ -141,6 +210,14 @@ enyo.kind({
 		NewTimer["channel"] = 0;
 		NewTimer["repeat"] = 0;
 	},
+	setupChannelSelect: function (inSender, inEvent) {
+	  this.$.channelSelect.setContent(this.channelList[inEvent.index]);
+	  this.$.channelSelect.setValue(inEvent.index);
+	},
+	ChannelSelected2: function (inSender, inEvent) {
+	  enyo.log(inEvent.selected.getValue());
+	  enyo.log(inEvent.selected.getContent());
+	},	
 	resize: function() {
 		console.log("RESIZE!!!!!!");
 			this.reflow();
@@ -246,20 +323,8 @@ enyo.kind({
 		this.$.lbldebug.setContent(inEvent.data);//.result[1].countryCode));
 	},
 	processSTResponse: function(inSender, inEvent) {
+		this.getChannels(inEvent.data);
 		SetTimerUrl = TSAddress + "/index_s.html?" + TSPWMD5 + "_newhddtimer=Neuer+DVR-Timer";
-		
-		/*
-		var formData = new FormData();
-		formData.append("tvMode", "1_350a7f5ee27d22dbe36698b10930ff96_set_tvMode_backtonew");
-		formData.append("service_1", 0);
-		formData.append("date", "20.01");
-		formData.append("start", "23:00"); //%3A00",
-		formData.append("stop", "23:03"); //%3A03",
-		formData.append("repeat", 0);
-		formData.append("type", 6);
-		formData.append("350a7f5ee27d22dbe36698b10930ff96_set_newtimer", "Übernehmen");
-		*/
-		
 		params = {
 		    //"tvMode": "1_350a7f5ee27d22dbe36698b10930ff96_set_tvMode_backtonew",
 		    "service_1": NewTimer.channel, //0,
@@ -270,19 +335,6 @@ enyo.kind({
 		    "type": 6,
 		    "350a7f5ee27d22dbe36698b10930ff96_set_newtimer": "Übernehmen"                               
 		};
-		
-		/*params = {
-		    //"tvMode": "1_350a7f5ee27d22dbe36698b10930ff96_set_tvMode_backtonew",
-		    "service_1": 0,
-		    "date": "20.01",
-		    "start": "03:00",
-		    "stop": "03:03",
-		    "repeat": 0,
-		    "type": 6,
-		    "350a7f5ee27d22dbe36698b10930ff96_set_newtimer": "Übernehmen"                               
-		};*/		
-	    
-		//console.log(formData);
 		var request = new enyo.Ajax({
 			url: SetTimerUrl,
 			method: "POST",
@@ -292,6 +344,35 @@ enyo.kind({
 		request.response(enyo.bind(this, "processSetTimer"));
 		request.error(this, "processSetTimerError");
 		request.go(); 	
+	},
+	getChannels: function(helper){
+		this.channelList = [];
+		//Tabelle suchen
+		var strlength = helper.length;
+		var Pos = helper.indexOf("service_1", 0); //
+		PosEndeList = helper.indexOf("</select>", Pos);
+		var i = 0;
+		while (Pos >= 0)
+		  {
+			//Einträge suchen
+			Pos = helper.indexOf("value='", Pos + 2); //
+			if (Pos  >= 0 ) 
+				{var Pos2 = helper.indexOf("'", Pos + 7);
+					if (Pos >= PosEndeList){
+						Pos = -1;	
+					}
+					else {
+						//this.channelList[i] = helper.substring(Pos + 7 , Pos2);
+						Pos3  = helper.indexOf(">", Pos + 1);
+						Pos4  = helper.indexOf("<", Pos + 1);
+						console.log("Found " + helper.substring(Pos3 + 1, Pos4)+"*");
+						this.channelList[i] = helper.substring(Pos3 + 1, Pos4);
+					}
+					i++;
+				}
+		  };
+		this.$.NewTimerChannel2.setCount(this.channelList.length);		  
+		//this.$.repeater.setCount(Timers.length);		
 	},
 	processTimers: function(inSender, inEvent) {
 		//console.log(inEvent.data);
