@@ -1,7 +1,11 @@
 TSAddress = ""; //"http://192.168.2.48";
 TSPWMD5 = "";
 TimerID = 0;
+ModTimer = false;
+ModTimerChannel = null;
+ModTimerChannelID = null;
 Timers = new Array();
+Sender = new Array();
 NewTimer = [];
 channelList = new Array();
 enyo.kind({
@@ -75,6 +79,8 @@ enyo.kind({
 							{tag: "span", name: "sender", style: "float: right; color: lightgrey;"},
 							{tag: "br"},
 							{tag: "span", name: "datum", style: "color: lightgrey;"},
+							{content: "    ", style: "width: 30px"},
+							{tag: "span", name: "timerkind", style: "color: lightgrey;"},//							
 							{content: "   "},
 							{tag: "span", name: "time", style: "float: right; color: lightgrey;"}//,
 							//{content: " - "},
@@ -116,9 +122,10 @@ enyo.kind({
 						{content: "SAT1  ", value: 3}
 					]}
 				]},*/
-				{classes: "onyx-sample-divider", content: "Channel"},				
+				{classes: "onyx-sample-divider", content: "Channel", name: "NewTimerTitel"},				
 				{
 				    kind: "onyx.PickerDecorator",
+				    name: "TimerDatePicker",
 				    components: [{
 						style: "width: 300px;"
 					}, 
@@ -162,18 +169,19 @@ enyo.kind({
 					{kind: "onyx.PickerDecorator",  components: [
 						{},
 						{kind: "onyx.Picker", name:"NewTimerRepeat", onSelect: "RepeatSelected", components: [
-							{content: "once  ", value: 0, active: true},
-							{content: "daily ", value: 1},
-							{content: "weekly", value: 2},
-							{content: "Mo-Fr", value: 3},
-							{content: "Sa-So", value: 4},
+							{content: "once  ", value: 0, active: true, name: "TK1x"},
+							{content: "daily ", value: 1, name: "TK1d"},
+							{content: "weekly", value: 2, name: "TK1w"},
+							{content: "Mo-Fr", value: 3, name: "TKMoFr"},
+							{content: "Sa-So", value: 4, name: "TKSaSo"},
 						]}
 					]}
 				]},				
 				{classes: "onyx-sample-divider", content: " "},
 
 				{kind: "FittableColumns", fit: true, classes: "fittable-sample-mtb fittable-sample-o", components: [
-					{kind:"onyx.Button", content: "Set Timer", classes: "onyx-affirmative", ontap:"buttonSetTimer"},			
+					{kind:"onyx.Button", name: "btnSetTimer", content: "Set Timer", classes: "onyx-affirmative", ontap:"buttonSetTimer"},
+					{kind:"onyx.Button", name: "btnModTimer", content: "Mod Timer", classes: "onyx-affirmative", ontap:"buttonModTimer"},			
 					//{kind: "onyx.Button", content: "Save", classes: "onyx-negative", ontap: "buttonSetNewTimer"},
 					//{tag: "br"},
 					{content: "", fit: true, classes: "fittable-sample-mlr fittable-sample-o"},
@@ -271,6 +279,40 @@ enyo.kind({
 		help = inEvent.selected;
 		NewTimer["repeat"] = help.value;
 		console.log(NewTimer.repeat);
+	},
+	buttonModTimer: function(inSender, inEvent){
+		//Alten Timer löschen
+		this.$.wsdeltimer.setUrl(TSAddress + "/index_s.html?" + TSPWMD5 + "_deletetimer_" + TimerID + "=L%C3%B6schen");
+		this.$.wsdeltimer.send();
+		help = this.$.NewTimerDate.getValue();
+		help=help.getDate();
+		NewTimer["date"] =  ( help < 10 ? "0" : "" ) + help;		
+		help = this.$.NewTimerDate.getValue();
+		help=help.getMonth();
+		help++;
+		NewTimer.date= NewTimer.date + "." + ( help < 10 ? "0" : "" ) + help;
+
+		//Start
+		help = this.$.NewTimerStart.getValue();
+		help=help.getHours();
+		NewTimer["start"]= ( help < 10 ? "0" : "" ) + help;
+		help = this.$.NewTimerStart.getValue();
+		help=help.getMinutes();
+		NewTimer["start"]= NewTimer.start + ":" + ( help < 10 ? "0" : "" ) + help;
+		
+		//Stop
+		help = this.$.NewTimerStop.getValue();
+		help=help.getHours();
+		NewTimer["stop"]= ( help < 10 ? "0" : "" ) + help;
+		help = this.$.NewTimerStop.getValue();
+		help=help.getMinutes();
+		NewTimer["stop"]= NewTimer.stop + ":" + ( help < 10 ? "0" : "" ) + help;
+		
+		SetTimerUrl = TSAddress + "/index_s.html?" + TSPWMD5 + "_newhddtimer=Neuer+DVR-Timer";
+		this.$.wssettimer.setUrl(SetTimerUrl);
+		this.$.wssettimer.send();		
+		this.$.NewTimerPopup.hide();
+		//this.buttonSetTimer();
 	},	
 	buttonSetTimer: function(inSender) {
 
@@ -310,8 +352,14 @@ enyo.kind({
 		this.$.wssettimer.send();		
 	},
 	processDelTimer: function(inSender, inEvent)  {
-		this.$.DelTimerConfirmPopup.show();
-		helper = TimerID + 1;
+		if (ModTimer) {
+			this.$.wsdeltimerconfirm.setUrl(TSAddress + "/index_s.html?" + TSPWMD5 + "_confirmdelete=Ja");
+			this.$.wsdeltimerconfirm.send();
+			this.buttonTimers();
+		} else {
+			this.$.DelTimerConfirmPopup.show();
+			helper = TimerID + 1;
+		};
 		//this.$.lblDelTimer.setContent("Delete Timer #" + helper);
 	},
 	processSetTimer: function(inSender, inEvent)  {
@@ -393,6 +441,7 @@ enyo.kind({
 						Pos4  = helper.indexOf("<", Pos + 1);
 						//console.log("Found " + helper.substring(Pos3 + 1, Pos4)+"*");
 						this.channelList[i] = helper.substring(Pos3 + 5, Pos4);
+						Sender[i] = helper.substring(Pos3 + 5, Pos4);
 					}
 					i++;
 				}
@@ -429,6 +478,11 @@ enyo.kind({
 					Pos9 = helper.indexOf("<td>", Pos8);
 					Pos10 = helper.indexOf("</td>", Pos9);
 					Timers[i]["titel"] = helper.substring(Pos9 + 4, Pos10);
+					Pos11 = helper.indexOf("'center'>", Pos10);
+					Pos12 = helper.indexOf("<", Pos11);
+					Timers[i]["timerkind"] = helper.substring(Pos11 + 9, Pos12);
+					//console.log("*" + Timers[i].datum + "*");
+					
 					//Timers[i] = helper.substring(Pos9 + 4, Pos10);
 					i++;
 					//console.log("-" + helper.substring(Pos + 4, Pos2 -4) + "-" + helper.substring(Pos3 + 9, Pos4) + "-");
@@ -457,6 +511,7 @@ enyo.kind({
 		item.$.titel.setContent(Timers[index].titel);
 		item.$.sender.setContent(Timers[index].sender);
 		item.$.datum.setContent(Timers[index].datum);
+		item.$.timerkind.setContent(Timers[index].timerkind);
 		item.$.time.setContent(Timers[index].start + " - " + Timers[index].stop);
 		//item.$.stop.setContent(Timers[index].stop);
 		this.resize();
@@ -474,6 +529,64 @@ enyo.kind({
 	},
 	modTimer: function(inSender, inEvent){
 		this.$.TimerSelPopup.hide();
+		this.setupTimerPopup("modify", TimerID);	
+	},
+	setupTimerPopup: function(mode, TID){
+		switch (mode) {
+		case 'new':
+			ModTimer = false;
+			this.$.TimerDatePicker.setShowing(true);
+			this.$.btnModTimer.setShowing(false);
+			this.$.btnSetTimer.setShowing(true);
+			this.$.NewTimerTitel.setContent("CHANNEL");
+			break;
+		case 'modify':
+			TimerID = TID;
+			ModTimer = true;
+			ModTimerChannel = Timers[TID].sender;
+			ModTimerChannelID = Sender.indexOf(ModTimerChannel);
+			NewTimer["channel"] = ModTimerChannelID;
+			console.log("CHANNEL: " + ModTimerChannel + " - " + ModTimerChannelID);
+			this.$.TimerDatePicker.setShowing(false);
+			this.$.btnModTimer.setShowing(true);
+			this.$.btnSetTimer.setShowing(false);						
+			this.$.NewTimerTitel.setContent(Timers[TID].titel);
+			switch (Timers[TID].timerkind) {
+			case '1x':
+				this.$.NewTimerRepeat.setSelected(this.$.TK1x);			
+				break;
+			case 'T':
+				this.$.NewTimerRepeat.setSelected(this.$.TK1d);			
+				break;
+			case '1 W':
+				this.$.NewTimerRepeat.setSelected(this.$.TK1w);			
+				break;			
+			case '1-5':
+				this.$.NewTimerRepeat.setSelected(this.$.TKMoFr);			
+				break;
+			case '6-7':
+				this.$.NewTimerRepeat.setSelected(this.$.TKSaSo);			
+				break;				
+			};
+			Tag = Timers[TID].datum.substring(0,2);
+			Monat = Timers[TID].datum.substring(3,5);
+			//console.log("***" + Monat + "***");
+			Monat = Monat -1;
+			Jahr = Timers[TID].datum.substring(6,10);
+			SStunde = Timers[TID].start.substring(0,2);
+			SMinute = Timers[TID].start.substring(3,5);
+			EStunde = Timers[TID].stop.substring(0,2);
+			EMinute = Timers[TID].stop.substring(3,5);		
+			//console.log("**" + Tag + "*" + Monat + "*" + Jahr + "**");
+			help = new Date(Jahr, Monat, Tag, SStunde, SMinute, 00);
+			this.$.NewTimerStart.setValue(help);
+			help = new Date(Jahr, Monat, Tag, EStunde, EMinute, 00);
+			this.$.NewTimerStop.setValue(help);
+			help = new Date(Jahr, Monat, Tag, SStunde, SMinute, 00);
+			this.$.NewTimerDate.setValue(help);
+		};
+		this.$.NewTimerPopup.show();
+		//console.log("**** " + mode + "-" + TID);
 	},
 	delTimer: function(inSender, inEvent){
 		//TimerID = inEvent.index;
@@ -516,8 +629,8 @@ enyo.kind({
 	buttonSetNewTimer: function(inSender, inEvent){
 		this.$.NewTimerPopup.hide();
 		this.buttonSetTimer();
-	},
+	},	
 	OpenAddTimerPopup: function(inSender, inEvent){
-		this.$.NewTimerPopup.show();		
+		this.setupTimerPopup("new", -1);			
 	}
 });
